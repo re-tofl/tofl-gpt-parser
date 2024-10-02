@@ -1,11 +1,8 @@
 use super::Parse;
-use crate::models::Parser;
+use crate::models::{ParsedData, ParsedDataInterpret, Parser};
 
 
 #[derive(Debug)]
-pub struct ParsedDataInterpret {
-
-}
 pub struct ParserInterpret {
     parser: Parser,
 }
@@ -19,8 +16,7 @@ impl ParserInterpret {
 }
 
 impl Parse for ParserInterpret {
-    type Output = ParsedDataInterpret;
-    fn parse(&mut self, data: &str) -> Result<(Self::Output), String> {
-        Ok((ParsedDataInterpret {}))
+    fn parse(&mut self, data: &str) -> Result<(ParsedData), String> {
+        Ok((ParsedData::Interpret(ParsedDataInterpret{})))
     }
 }

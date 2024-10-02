@@ -4,9 +4,8 @@ pub mod parser_interpret;
 pub use parser_trs::ParserTRS;
 pub use parser_interpret::ParserInterpret;
 
-use crate::models::Parser;
+use crate::models::ParsedData;
 
 pub trait Parse {
-    type Output;
-    fn parse(&mut self, data: &str) -> Result<(Self::Output), String>;
+    fn parse(&mut self, data: &str) -> Result<(ParsedData), String>;
 }
