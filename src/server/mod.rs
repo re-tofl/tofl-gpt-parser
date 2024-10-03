@@ -1,9 +1,21 @@
 pub mod handlers;
 
+use std::io;
+use rouille::{router};
 use handlers::handle_request;
 
 pub fn start_server() {
-    println!("Сервер запущен...");
+    let addr = "127.0.0.1:8090";
+    println!("Now listening on {addr}");
 
-    handle_request();
+    rouille::start_server(addr, move |request| {
+        rouille::log(request, io::stdout(), || {
+            router!(request,
+                (POST) (/parse) => {
+                    handle_request(request)
+                },
+                _ => rouille::Response::empty_404()
+            )
+        })
+    });
 }
