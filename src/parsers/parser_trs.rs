@@ -23,13 +23,17 @@ impl ParserTRS {
         let expected = "variables=";
         self.parser.peek()?;
         for c in expected.chars() {
-            self.parser.read_exact_char(c)?;
+            if self.parser.read_exact_char(c)? {
+                return Err(self.parser.format_error(c.to_string()));
+            }
         }
         loop {
-            let var = self.parser.peek();
-            if (!var?.is_alphabetic()) {
-
+            if (self.parser.peek()?.is_alphabetic()) {
+                self.variables.insert(self.parser.next().to_string());
+            } else {
+                break;
             }
+            let after_var = self.parser.peek()?;
         }
         if (self.variables.is_empty()) {
             return Err("variables not found".to_string());
