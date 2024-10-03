@@ -94,19 +94,16 @@ impl Parser {
         current
     }
 
-    pub fn read_exact_char(&mut self, expected: char) -> Result<(), String> {
-        let current = self.next();
-        if current.is_err() {
-            return Err(format!("Unexpected EOF"));
-        }
-
-        let current_symbol = current.ok().unwrap();
-        if current_symbol == expected {
-            Ok(())
+    pub fn read_exact_char(&mut self, expected: char) -> Result<(bool), String> {
+        let start_pos = self.pos;
+        let current = self.next()?;
+        if current == expected {
+            // Возвращаем true, если были считаны пробельные символы
+            Ok(start_pos != self.pos - 1)
         } else {
             Err(format!(
                 "Ошибка на строке {}, позиции {}: ожидался символ '{}', но был '{}'",
-                self.line, self.pos_in_line, expected, current_symbol
+                self.line, self.pos_in_line, expected, current
             ))
         }
     }
