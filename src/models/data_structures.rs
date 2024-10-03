@@ -58,9 +58,11 @@ impl Parser {
             if current == ' ' || current == '\t' {
                 self.pos_in_line += 1;
             } else {
-                if current == '\n' {
-                    self.line += 1;
+                if current == '\n' || current == '\r' {
                     self.pos_in_line = 0;
+                    if current == '\n' {
+                        self.line += 1;
+                    }
                 } else {
                     self.pos_in_line += 1;
                 }
@@ -76,6 +78,7 @@ impl Parser {
 
             if current == ' ' || current == '\t' {
                 self.pos += 1;
+                self.pos_in_line += 1;
             } else {
                 return Ok(current);
             }
