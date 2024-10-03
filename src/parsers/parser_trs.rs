@@ -20,39 +20,45 @@ impl ParserTRS {
     }
 
     fn parse_variables(&mut self) -> Result<(), String> {
-        let expected = "variables=";
+        let expected = "variables";
         self.parser.peek()?;
         for c in expected.chars() {
             if self.parser.read_exact_char(c)? {
                 return Err(self.parser.format_error(c.to_string()));
             }
         }
+        self.parser.read_exact_char('=')?;
         loop {
-            if (self.parser.peek()?.is_alphabetic()) {
-                self.variables.insert(self.parser.next().to_string());
+            if self.parser.peek()?.is_alphabetic() {
+                self.variables.insert(String::from(self.parser.next()?));
             } else {
                 break;
             }
             let after_var = self.parser.peek()?;
+            if after_var == ',' {
+                self.parser.next()?;
+            } else {
+                break
+            }
         }
-        if (self.variables.is_empty()) {
+        self.parser.read_eol()?;
+        if self.variables.is_empty() {
             return Err("variables not found".to_string());
         }
         Ok(())
     }
 
-    fn parse_variable(&mut self) -> Result<String, String> {
-
-    }
 }
 
 impl Parse for ParserTRS {
     fn parse(&mut self) -> Result<(ParsedData), String> {
+
+        self.parse_variables()?;
         Ok((ParsedData::TRS(ParsedDataTRS {
             rules: vec![],
-            variables: *self.variables,
-            constants: *self.constants,
-            functions: *self.functions,
+            variables: self.variables.clone(),
+            constants: self.constants.clone(),
+            functions: self.functions.clone(),
         })))
     }
 }
