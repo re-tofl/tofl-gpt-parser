@@ -3,21 +3,19 @@ use std::collections::HashSet;
 #[derive(Debug)]
 pub struct Parser {
     input: Vec<char>,
-    pos : u32,
-    line : u32,
-    pos_in_line : u32,
+    pos: u32,
+    line: u32,
+    pos_in_line: u32,
 }
 
 #[derive(Debug)]
 pub enum ParsedData {
     Interpret(ParsedDataInterpret),
-    TRS(ParsedDataTRS)
+    TRS(ParsedDataTRS),
 }
 
 #[derive(Debug)]
-pub struct ParsedDataInterpret {
-
-}
+pub struct ParsedDataInterpret {}
 
 #[derive(Debug)]
 pub struct ParsedDataTRS {
@@ -45,7 +43,7 @@ impl Parser {
             input: input.chars().collect(),
             pos: 0,
             line: 1,
-            pos_in_line: 0
+            pos_in_line: 0,
         }
     }
 
@@ -55,19 +53,23 @@ impl Parser {
             let current = self.input[self.pos as usize];
             self.pos += 1;
 
-            if current == ' ' || current == '\t' {
-                self.pos_in_line += 1;
-            } else {
-                if current == '\n' || current == '\r' {
-                    self.pos_in_line = 0;
-                    if current == '\n' {
-                        self.line += 1;
-                    }
-                } else {
+            match current {
+                ' ' | '\t' => {
                     self.pos_in_line += 1;
                 }
-
-                break;
+                '\r' => {
+                    self.pos_in_line = 0;
+                    break;
+                }
+                '\n' => {
+                    self.line += 1;
+                    self.pos_in_line = 0;
+                    break;
+                }
+                _ => {
+                    self.pos_in_line += 1;
+                    break;
+                }
             }
         }
     }
@@ -99,11 +101,11 @@ impl Parser {
         }
 
         let current_symbol = current.ok().unwrap();
-        if  current_symbol == expected {
-           Ok(())
+        if current_symbol == expected {
+            Ok(())
         } else {
             Err(format!(
-               "Ошибка на строке {}, позиции {}: ожидался символ '{}', но был '{}'",
+                "Ошибка на строке {}, позиции {}: ожидался символ '{}', но был '{}'",
                 self.line, self.pos_in_line, expected, current_symbol
             ))
         }
