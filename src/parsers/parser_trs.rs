@@ -1,7 +1,6 @@
-use std::collections::HashSet;
-use std::string::ParseError;
 use super::Parse;
 use crate::models::{ParsedData, ParsedDataTRS, Parser};
+use std::collections::HashSet;
 
 pub struct ParserTRS {
     parser: Parser,
@@ -20,8 +19,26 @@ impl ParserTRS {
         }
     }
 
-    fn parse_variables(&mut self) -> Result<(), ParseError> {
-        loop {}
+    fn parse_variables(&mut self) -> Result<(), String> {
+        let expected = "variables=";
+        self.parser.peek()?;
+        for c in expected.chars() {
+            self.parser.read_exact_char(c)?;
+        }
+        loop {
+            let var = self.parser.peek();
+            if (!var?.is_alphabetic()) {
+
+            }
+        }
+        if (self.variables.is_empty()) {
+            return Err("variables not found".to_string());
+        }
+        Ok(())
+    }
+
+    fn parse_variable(&mut self) -> Result<String, String> {
+
     }
 }
 
