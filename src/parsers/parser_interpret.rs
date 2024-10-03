@@ -8,9 +8,9 @@ pub struct ParserInterpret {
 }
 
 impl ParserInterpret {
-    pub fn new() -> Self {
+    pub fn new(input: &str) -> Self {
         ParserInterpret {
-            parser: Parser::new(),
+            parser: Parser::new(input),
         }
     }
 }

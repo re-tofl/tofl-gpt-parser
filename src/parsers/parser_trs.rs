@@ -6,9 +6,9 @@ pub struct ParserTRS {
 }
 
 impl ParserTRS {
-    pub fn new() -> Self {
+    pub fn new(input: &str) -> Self {
         ParserTRS {
-            parser: Parser::new(),
+            parser: Parser::new(input),
         }
     }
 }

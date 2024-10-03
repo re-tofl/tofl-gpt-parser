@@ -3,8 +3,8 @@ pub fn handle_request() {
 
     let data = "";
 
-    let mut parser_trs = ParserTRS::new();
-    let mut parser_interpret = ParserInterpret::new();
+    let mut parser_trs = ParserTRS::new(data);
+    let mut parser_interpret = ParserInterpret::new(data);
 
     match parser_trs.parse(data) {
         Ok(result) => println!("Парсинг TRS: {:?}", result),
