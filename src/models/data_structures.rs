@@ -54,20 +54,20 @@ impl Parser {
         }
     }
 
-    pub fn peek(&mut self) -> Option<char> {
+    pub fn peek(&mut self) -> Result<char, String> {
         while self.pos < self.input.len() as u32 {
             let current = self.input[self.pos as usize];
 
             if current == ' ' || current == '\t' {
                 self.pos += 1;
             } else {
-                return Some(current);
+                return Ok(current);
             }
         }
-        None
+        Err(format!("Unexpected EOF"))
     }
 
-    pub fn next(&mut self) -> Option<char> {
+    pub fn next(&mut self) -> Result<char, String> {
         let current = self.peek();
         self.advance();
         current
