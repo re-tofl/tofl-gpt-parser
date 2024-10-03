@@ -108,6 +108,18 @@ impl Parser {
         }
     }
 
+    pub fn read_eol(&mut self) -> Result<(), String> {
+        match self.next()? {
+            '\n' => Ok(()),
+            '\r' => if self.next()? == '\n' {
+                Ok(())
+            } else {
+                Err(self.format_error("eol".parse().unwrap()))
+            },
+            _ => Err(self.format_error("eol".parse().unwrap())),
+        }
+    }
+
     pub fn format_error(&mut self, expected: String) -> String {
         format!("Ошибка в строке {}, на позиции {}, ожидалось {}, считано '{}'",
                 self.line, self.pos_in_line, expected, self.input[self.pos]);
