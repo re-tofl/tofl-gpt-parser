@@ -21,18 +21,18 @@ struct ErrorJson{
 pub fn handle_request(request : &rouille::Request) -> rouille::Response {
     let json: InputJson = try_or_400!(rouille::input::json_input(request));
 
-    let mut parser_trs = ParserTRS::new();
-    let mut parser_interpret = ParserInterpret::new();
+    let mut parser_trs = ParserTRS::new(&json.TRS[..]);
+    let mut parser_interpret = ParserInterpret::new(&json.Interpretation[..]);
     let mut response : rouille::Response;
 
     let mut res : ParsedData;
     let mut err = ErrorJson{ error_trs: "".to_string(), error_interpretation: "".to_string() };
     
-    match parser_trs.parse(&json.TRS[..]) {
+    match parser_trs.parse() {
         Ok(result) => println!("Парсинг TRS: {:?}", result),
         Err(e) => err.error_trs = e,
     };
-    match parser_interpret.parse(&json.Interpretation[..]) {
+    match parser_interpret.parse() {
         Ok(result) => println!("Парсинг Interpet: {:?}", result),
         Err(e) => err.error_interpretation = e,
     };
