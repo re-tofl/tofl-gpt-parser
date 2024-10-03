@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[derive(Debug)]
 pub struct Parser {
     input: Vec<char>,
@@ -19,9 +21,23 @@ pub struct ParsedDataInterpret {
 
 #[derive(Debug)]
 pub struct ParsedDataTRS {
-
+    pub rules: Vec<Rule>,
+    pub variables: HashSet<String>,
+    pub constants: HashSet<String>,
+    pub functions: HashSet<String>,
 }
 
+#[derive(Debug)]
+pub struct Rule {
+    pub left: Term,
+    pub right: Term,
+}
+
+#[derive(Debug)]
+pub struct Term {
+    pub value: String,
+    pub childs: Vec<Term>,
+}
 
 impl Parser {
     pub fn new(input: &str) -> Self {
