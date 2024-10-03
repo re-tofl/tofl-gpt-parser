@@ -16,7 +16,7 @@ impl ParserInterpret {
 }
 
 impl Parse for ParserInterpret {
-    fn parse(&mut self, data: &str) -> Result<(ParsedData), String> {
+    fn parse(&mut self) -> Result<(ParsedData), String> {
         Ok((ParsedData::Interpret(ParsedDataInterpret{})))
     }
 }

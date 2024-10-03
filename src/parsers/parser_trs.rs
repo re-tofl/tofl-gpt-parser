@@ -14,7 +14,7 @@ impl ParserTRS {
 }
 
 impl Parse for ParserTRS {
-    fn parse(&mut self, data: &str) -> Result<(ParsedData), String> {
+    fn parse(&mut self) -> Result<(ParsedData), String> {
         Ok((ParsedData::TRS(ParsedDataTRS{})))
     }
 }
