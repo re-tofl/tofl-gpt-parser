@@ -107,4 +107,9 @@ impl Parser {
             ))
         }
     }
+
+    pub fn format_error(&mut self, expected: char) {
+        format!("Ошибка в строке {}, на позиции {}, ожидалось {}, считано '{}'",
+                self.line, self.pos_in_line, expected, self.input[self.pos]);
+    }
 }
