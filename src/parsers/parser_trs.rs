@@ -1,12 +1,14 @@
 use super::Parse;
 use crate::models::{ParsedData, ParsedDataTRS, Parser};
 use std::collections::HashSet;
+use crate::models::data_structures::{Rule, Term, Types};
 
+#[derive(Debug)]
 pub struct ParserTRS {
     parser: Parser,
-    variables: HashSet<String>,
-    constants: HashSet<String>,
-    functions: HashSet<String>,
+    variables: HashSet<char>,
+    constants: HashSet<char>,
+    functions: HashSet<char>,
 }
 
 impl ParserTRS {
@@ -30,7 +32,7 @@ impl ParserTRS {
         self.parser.read_exact_char('=')?;
         loop {
             if self.parser.peek()?.is_alphabetic() {
-                self.variables.insert(String::from(self.parser.next()?));
+                self.variables.insert(self.parser.next()?);
             } else {
                 break;
             }
@@ -38,7 +40,7 @@ impl ParserTRS {
             if after_var == ',' {
                 self.parser.next()?;
             } else {
-                break
+                break;
             }
         }
         self.parser.read_eol()?;
@@ -48,14 +50,104 @@ impl ParserTRS {
         Ok(())
     }
 
+    fn parse_rules(&mut self) -> Result<Vec<Rule>, String> {
+        let mut rules: Vec<Rule> = Vec::new();
+
+        loop {
+            match self.parser.peek() {
+                Ok(_) => {
+                    let rule = self.parse_rule()?;
+                    rules.push(rule);
+                }
+                Err(_) => break,
+            }
+        }
+
+        if rules.is_empty() {
+            return Err("rules not found".to_string());
+        }
+        Ok((rules))
+    }
+
+    fn parse_rule(&mut self) -> Result<Rule, String> {
+        let lhs = self.parse_term()?;
+
+        self.parser.read_exact_char('=')?;
+
+        let rhs = self.parse_term()?;
+
+        self.parser.read_eol()?;
+
+        Ok(Rule { left: lhs, right: rhs })
+    }
+    /*
+    variables = x,y
+    f(x,h(y))=h(f(x,y))
+    g = f
+     */
+    fn parse_term(&mut self) -> Result<Term, String> {
+        self.parser.peek()?;
+        let c = self.parser.peek()?;
+        if !c.is_alphabetic() {
+            return Err(self.parser.format_error("буква".parse().unwrap()));
+        }
+        self.parser.next()?;
+        let mut term = Term {
+            value: c.to_string(),
+            childs: Vec::new(),
+        };
+
+        let symbol = match self.parser.peek() {
+            Ok(val) => { val }
+            Err(_) => return Ok(term),
+        };
+
+        if symbol == '(' {
+            if self.variables.contains(&c) {
+                return Err(self.parser.format_type_error(Types::FUNCTION, Types::VARIABLE));
+            }
+            if self.constants.contains(&c) {
+                return Err(self.parser.format_type_error(Types::FUNCTION, Types::CONSTANT));
+            }
+            self.parser.read_exact_char('(')?;
+            self.functions.insert(c);
+            let args = self.parse_arg_list()?;
+            self.parser.read_exact_char(')')?;
+            term.childs = args;
+        } else {
+            if self.functions.contains(&c) {
+                return Err(self.parser.format_type_error(Types::ConstantOrVariable, Types::FUNCTION));
+            }
+            if !self.variables.contains(&c) {
+                self.constants.insert(c);
+            }
+        }
+
+        Ok(term)
+    }
+
+    fn parse_arg_list(&mut self) -> Result<Vec<Term>, String> {
+        let mut args: Vec<Term> = Vec::new();
+
+        args.push(self.parse_term()?);
+
+        while self.parser.peek()? == ',' {
+            self.parser.next()?;
+            args.push(self.parse_term()?);
+        }
+
+        Ok(args)
+    }
 }
 
 impl Parse for ParserTRS {
     fn parse(&mut self) -> Result<(ParsedData), String> {
-
         self.parse_variables()?;
+
+        let rules = self.parse_rules()?;
+
         Ok((ParsedData::TRS(ParsedDataTRS {
-            rules: vec![],
+            rules,
             variables: self.variables.clone(),
             constants: self.constants.clone(),
             functions: self.functions.clone(),
