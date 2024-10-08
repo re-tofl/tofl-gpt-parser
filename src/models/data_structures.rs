@@ -119,15 +119,13 @@ impl Parser {
 
     pub fn read_exact_char(&mut self, expected: char) -> Result<(bool), String> {
         let start_pos = self.pos;
-        let current = self.next()?;
+        let current = self.peek()?;
         if current == expected {
+            self.next()?;
             // Возвращаем true, если были считаны пробельные символы
             Ok(start_pos != self.pos - 1)
         } else {
-            Err(format!(
-                "Ошибка на строке {}, позиции {}: ожидался символ '{}', но был '{}'",
-                self.line, self.pos_in_line, expected, current
-            ))
+            Err(self.format_error(expected.to_string()))
         }
     }
 
