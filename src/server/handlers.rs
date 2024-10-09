@@ -1,4 +1,5 @@
 use rouille::{router, try_or_400};
+use crate::models::data_structures::Model;
 use crate::models::ParsedData;
 use crate::parsers::{Parse, ParserTRS, ParserInterpret};
 
@@ -22,7 +23,11 @@ pub fn handle_request(request : &rouille::Request) -> rouille::Response {
     let json: InputJson = try_or_400!(rouille::input::json_input(request));
 
     let mut parser_trs = ParserTRS::new(&json.TRS[..]);
-    let mut parser_interpret = ParserInterpret::new(&json.Interpretation[..]);
+    let mut parser_interpret = ParserInterpret::new(&json.Interpretation[..], Model {
+        variables: Default::default(),
+        constants: Default::default(),
+        functions: Default::default(),
+    });
     let mut response : rouille::Response;
 
     let mut res : ParsedData;
