@@ -118,7 +118,7 @@ impl ParserTRS {
             if *self.functions.get(&c).unwrap() == -1{
                 self.functions.insert(c, args.len() as i32);
             } else if *self.functions.get(&c).unwrap() != args.len() as i32 {
-                return Err(format!("Не совпадает арность функции {}, ожидаемое количество аргументов: {} , получили: {}.", c, self.functions.get(&c).unwrap(), args.len()));
+                return Err(self.parser.format_arity_error(c, self.functions.get(&c).unwrap().to_string(), args.len().to_string()));
             }
             self.parser.read_exact_char(')')?;
             term.childs = args;
