@@ -126,6 +126,14 @@ impl Parser {
         Err(format!("Unexpected EOF"))
     }
 
+    pub fn peek_without_skipping(&mut self) -> Result<char, String> {
+        if self.pos < self.input.len() as u32 {
+            Ok(self.input[self.pos as usize])
+        } else {
+            Err(format!("Unexpected EOF"))
+        }
+    }
+
     pub fn next(&mut self) -> Result<char, String> {
         self.prev_pos_in_line = self.pos_in_line;
         self.prev_line = self.line;

@@ -25,10 +25,10 @@ impl ParserTRS {
         let expected = "variables";
         self.parser.peek()?;
         for c in expected.chars() {
-            if self.parser.read_exact_char(c)? {
-                return Err(format!("пробелы в слове variables"));
-                //return Err(self.parser.format_error(c.to_string()));
+            if self.parser.peek_without_skipping()? != c {
+                return Err(self.parser.format_error(c.to_string()));
             }
+            self.parser.next()?;
         }
         self.parser.read_exact_char('=')?;
         loop {
