@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
 pub struct Parser {
@@ -31,14 +31,14 @@ pub struct ParsedDataTRS {
     pub rules: Vec<Rule>,
     pub variables: HashSet<char>,
     pub constants: HashSet<char>,
-    pub functions: HashSet<char>,
+    pub functions: HashMap<char, i32>,
 }
 
 #[derive(Debug)]
 pub struct Model {
     pub variables: HashSet<char>,
     pub constants: HashSet<char>,
-    pub functions: HashSet<char>,
+    pub functions: HashMap<char, i32>,
 }
 
 #[derive(Debug)]
@@ -126,6 +126,14 @@ impl Parser {
         Err(format!("Unexpected EOF"))
     }
 
+    pub fn peek_without_skipping(&mut self) -> Result<char, String> {
+        if self.pos < self.input.len() as u32 {
+            Ok(self.input[self.pos as usize])
+        } else {
+            Err(format!("Unexpected EOF"))
+        }
+    }
+
     pub fn next(&mut self) -> Result<char, String> {
         self.prev_pos_in_line = self.pos_in_line;
         self.prev_line = self.line;
@@ -174,6 +182,11 @@ impl Parser {
     pub fn format_error(&mut self, expected: String) -> String {
         format!("Ошибка в строке {}, на позиции {}, ожидалось {}, считано '{}'",
                 self.line, self.pos_in_line, expected, self.input[self.pos as usize])
+    }
+
+    pub fn format_arity_error(&mut self,function: char, expected: String, received: String) -> String {
+        format!("Не совпадает арность функции {}, ожидаемое количество аргументов: {} , получили: {}",
+                function ,expected, received)
     }
 
     pub fn format_type_error(&mut self, expected: Types, received: Types) -> String {

@@ -1,6 +1,6 @@
 use super::Parse;
 use crate::models::{ParsedData, ParsedDataTRS, Parser};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use crate::models::data_structures::{Rule, Term, Types};
 
 #[derive(Debug)]
@@ -8,7 +8,7 @@ pub struct ParserTRS {
     parser: Parser,
     pub variables: HashSet<char>,
     pub constants: HashSet<char>,
-    pub functions: HashSet<char>,
+    pub functions: HashMap<char, i32>,
 }
 
 impl ParserTRS {
@@ -17,7 +17,7 @@ impl ParserTRS {
             parser: Parser::new(input),
             variables: HashSet::new(),
             constants: HashSet::new(),
-            functions: HashSet::new(),
+            functions: HashMap::new(),
         }
     }
 
@@ -25,15 +25,18 @@ impl ParserTRS {
         let expected = "variables";
         self.parser.peek()?;
         for c in expected.chars() {
-            if self.parser.read_exact_char(c)? {
-                return Err(format!("пробелы в слове variables"));
-                //return Err(self.parser.format_error(c.to_string()));
+            if self.parser.peek_without_skipping()? != c {
+                return Err(self.parser.format_error(c.to_string()));
             }
+            self.parser.next()?;
         }
         self.parser.read_exact_char('=')?;
         loop {
             if self.parser.peek()?.is_alphabetic() {
-                self.variables.insert(self.parser.next()?);
+                let current_variable = self.parser.next()?;
+                if !self.variables.insert(current_variable) {
+                    return Err(format!("Переменная {} объявлена несколько раз", current_variable));
+                }
             } else {
                 break;
             }
@@ -110,12 +113,20 @@ impl ParserTRS {
                 return Err(self.parser.format_type_error(Types::FUNCTION, Types::CONSTANT));
             }
             self.parser.read_exact_char('(')?;
-            self.functions.insert(c);
+            if !self.functions.contains_key(&c) {
+                self.functions.insert(c, -1);
+            }
             let args = self.parse_arg_list()?;
+
+            if *self.functions.get(&c).unwrap() == -1 {
+                self.functions.insert(c, args.len() as i32);
+            } else if *self.functions.get(&c).unwrap() != args.len() as i32 {
+                return Err(self.parser.format_arity_error(c, self.functions.get(&c).unwrap().to_string(), args.len().to_string()));
+            }
             self.parser.read_exact_char(')')?;
             term.childs = args;
         } else {
-            if self.functions.contains(&c) {
+            if self.functions.contains_key(&c) {
                 return Err(self.parser.format_type_error(Types::ConstantOrVariable, Types::FUNCTION));
             }
             if !self.variables.contains(&c) {

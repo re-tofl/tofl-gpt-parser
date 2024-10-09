@@ -45,7 +45,7 @@ impl ParserInterpret {
     fn parse_function_or_const(&mut self) -> Result<ParsedInterpretFunction, String> {
         let name = self.parser.peek()?;
 
-        if self.model.functions.contains(&name) {
+        if self.model.functions.contains_key(&name) {
             return self.parse_function()
         } else if self.model.constants.contains(&name) {
             return self.parse_constant()
