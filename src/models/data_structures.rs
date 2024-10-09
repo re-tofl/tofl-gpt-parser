@@ -27,15 +27,15 @@ pub struct ParsedInterpretFunction {
 }
 
 #[derive(Debug)]
-pub struct Model {
+pub struct ParsedDataTRS {
+    pub rules: Vec<Rule>,
     pub variables: HashSet<char>,
     pub constants: HashSet<char>,
     pub functions: HashSet<char>,
 }
 
 #[derive(Debug)]
-pub struct ParsedDataTRS {
-    pub rules: Vec<Rule>,
+pub struct Model {
     pub variables: HashSet<char>,
     pub constants: HashSet<char>,
     pub functions: HashSet<char>,
