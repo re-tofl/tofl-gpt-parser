@@ -22,17 +22,20 @@ impl ParserInterpret {
 impl Parse for ParserInterpret {
     fn parse(&mut self) -> Result<(ParsedData), String> {
         let mut result = Vec::new();
-        result.push(self.parse_function_or_const()?);
-        self.parser.read_eol()?;
 
         loop {
+            result.push(self.parse_function_or_const()?);
+
             match self.parser.peek() {
-                Ok(_) => {
-                    let func = self.parse_function_or_const()?;
-                    result.push(func);
-                    self.parser.read_eol()?;
-                }
                 Err(_) => break,
+                Ok(_) => {
+                    self.parser.read_eol()?;
+
+                    match self.parser.peek() {
+                        Err(_) => break,
+                        Ok(_) => {}
+                    }
+                }
             }
         }
 
@@ -66,7 +69,7 @@ impl ParserInterpret {
         //skip =
         self.parser.read_exact_char('=')?;
 
-        let expression = self.parse_polynomial(&variables)?;
+        let expression = self.parse_polynomial_expression(&variables)?;
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
@@ -93,21 +96,26 @@ impl ParserInterpret {
     fn parse_number_string(&mut self) -> Result<String, String> {
         let mut number = Vec::new();
         loop {
-            let digit = self.parser.peek()?;
+            match self.parser.peek() {
+                Err(_) => break,
+                Ok(digit) => {
+                    if !digit.is_ascii_digit() {
+                        break;
+                    }
 
-            if !digit.is_ascii_digit() {
-                let number_string = number.join("");
-
-                if number_string == "0" {
-                    return Err("Number can't be zero".to_string())
-                };
-
-                return Ok(number_string);
+                    self.parser.next()?;
+                    number.push(digit.to_string());
+                }
             }
-
-            let _ = self.parser.next();
-            number.push(digit.to_string());
         }
+
+        let number_string = number.join("");
+
+        if number_string == "0" {
+            return Err("Number can't be zero".to_string())
+        };
+
+        Ok(number_string)
     }
 
     fn parse_variable(&mut self) -> Result<String, String> {
@@ -119,9 +127,11 @@ impl ParserInterpret {
 
     fn parse_function_arguments(&mut self) -> Result<HashSet<String>, String> {
         let mut variables = HashSet::new();
-        variables.insert(self.parse_variable()?.to_string());
 
         loop {
+            //TODO check that variables don't repeat
+            variables.insert(self.parse_variable()?.to_string());
+
             let punctuation = self.parser.next()?;
 
             if punctuation == ')' {
@@ -130,81 +140,92 @@ impl ParserInterpret {
             } else if punctuation != ',' {
                 return Err(format!("Expected ',' or ')',  got '{}'", punctuation));
             }
-
-            //TODO check that variables don't repeat
-            variables.insert(self.parse_variable()?.to_string());
         }
     }
 
-    fn parse_polynomial(&mut self, variables: &HashSet<String>) -> Result<String, String> {
+    fn parse_polynomial_expression(&mut self, variables: &HashSet<String>) -> Result<String, String> {
         let mut polynomial_parts = Vec::new();
-        polynomial_parts.push(self.parse_monomial(variables)?.to_string());
 
         loop {
-            let punctuation = self.parser.peek()?.to_string();
+            polynomial_parts.push(self.parse_monomial(variables)?);
 
-            if punctuation == "\r" || punctuation == "\n" {
-                return Ok(polynomial_parts.join(" + "));
-            } else if punctuation != "+" {
-                return Err(format!("Expected '+' or eol,  got '{}'", punctuation));
-            } else {
-                self.parser.read_exact_char('+')?;
-                polynomial_parts.push(self.parse_monomial(variables)?);
+            match self.parser.peek() {
+                Err(_) => break,
+                Ok(punctuation) => {
+                    if punctuation == '\n' || punctuation == '\r' {
+                        break;
+                    } else if punctuation != '+' {
+                        return Err(format!("Expected '+' or eol,  got '{}'", punctuation));
+                    } else {
+                        self.parser.read_exact_char('+')?;
+                    }
+                }
             }
         }
+
+        Ok(format!("({})", polynomial_parts.join(" + ")))
     }
 
     fn parse_monomial(&mut self, variables: &HashSet<String>) -> Result<String, String> {
         let mut monomial_parts = Vec::new();
-        let mut coefficient = String::new();  // Теперь это будет String
+        let mut coefficient = String::new();
         let mut symbol = self.parser.peek()?;
 
         if symbol.is_ascii_digit() {
-            coefficient = self.parse_number_string()?;  // Присваиваем String, а не ссылку
+            coefficient = self.parse_number_string()?;
 
-            symbol = self.parser.peek()?;
-            if symbol != '*' {
-                return Ok(coefficient);  // Возвращаем строку напрямую
+            match self.parser.peek() {
+                Err(_) => return Ok(coefficient),
+                Ok(symbol) => {
+                    if symbol != '*' {
+                        return Ok(coefficient);
+                    }
+
+                    self.parser.read_exact_char('*')?;
+                }
             }
-
-            self.parser.read_exact_char('*')?;
         }
 
-        let variable = self.parse_variable()?;
+        let mut variable = self.parse_variable()?;
         // TODO check variables contains variable
-        let mut degree = String::new();  // Используем String
-
-        symbol = self.parser.peek()?;
-        if symbol == '{' {
-            degree = self.parse_degree()?;  // Присваиваем String
-        }
-
-        monomial_parts.push(build_monomial(&coefficient, &variable, &degree));  // Передаём ссылки на строки
+        let mut degree = String::new();
 
         loop {
-            symbol = self.parser.peek()?;
-            if symbol == '+' || symbol == '\n' || symbol == '\r' {
-                return Ok(monomial_parts.join(" * "));  // Возвращаем соединённые части монома
+            match self.parser.peek() {
+                Err(_) => return Ok(build_monomial(&coefficient, &variable, &degree)),
+                Ok(symbol) => {
+                    if symbol == '{' {
+                        degree = self.parse_degree()?;
+                    }
+                }
             }
 
-            coefficient.clear();  // Очищаем String вместо переприсваивания
-            degree.clear();  // Очищаем degree
+            monomial_parts.push(build_monomial(&coefficient, &variable, &degree));
+
+            match self.parser.peek() {
+                Err(_) => return Ok(monomial_parts.join(" * ")),
+                Ok(picked_symbol) => {
+                    symbol = picked_symbol;
+
+                    if symbol == '+' || symbol == '\n' || symbol == '\r' {
+                        return Ok(monomial_parts.join(" * "));
+                    }
+                }
+            }
+
+            coefficient.clear();
+            degree.clear();
 
             if symbol.is_ascii_digit() {
-                coefficient = self.parse_number_string()?;  // Присваиваем новое значение
+                coefficient = self.parse_number_string()?;
                 self.parser.read_exact_char('*')?;
             }
 
-            let variable = self.parse_variable()?;
+            variable = self.parse_variable()?;
             // TODO check variables contains variable
-
-            symbol = self.parser.peek()?;
-            if symbol == '{' {
-                degree = self.parse_degree()?;  // Присваиваем новое значение для degree
-            }
-
-            monomial_parts.push(build_monomial(&coefficient, &variable, &degree));  // Передаём ссылки
         }
+
+
     }
 
     fn parse_degree(&mut self) -> Result<String, String> {
