@@ -29,7 +29,7 @@ struct ResponseJson {
 pub fn handle_request(request: &rouille::Request) -> rouille::Response {
     let json: InputJson = try_or_400!(rouille::input::json_input(request));
     let mut err = ErrorJson { error_trs: "".to_string(), error_interpretation: "".to_string() };
-    let mut res = ResponseJson{json_TRS: Vec::new(), json_interpret: Vec::new()};
+    let mut res = ResponseJson { json_TRS: Vec::new(), json_interpret: Vec::new() };
 
     let mut parser_trs = ParserTRS::new(&json.TRS[..]);
     match parser_trs.parse() {
@@ -45,11 +45,13 @@ pub fn handle_request(request: &rouille::Request) -> rouille::Response {
         Err(e) => err.error_trs = e,
     };
 
-    let mut parser_interpret = ParserInterpret::new(&json.Interpretation[..], Model {
+    let model = Model {
         variables: parser_trs.variables,
         constants: parser_trs.constants,
         functions: parser_trs.functions,
-    });
+    };
+
+    let mut parser_interpret = ParserInterpret::new(&json.Interpretation[..], model);
     match parser_interpret.parse() {
         Ok(result) => {
             println!("Парсинг Interpet: {:?}", result);
