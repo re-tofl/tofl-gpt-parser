@@ -19,6 +19,7 @@ pub enum ParsedData {
 pub type ParsedDataInterpret = Vec<ParsedInterpretFunction>;
 
 #[derive(Debug)]
+#[derive(serde::Serialize)]
 pub struct ParsedInterpretFunction {
     pub(crate) name: String,
     pub(crate) variables: Vec<String>,
@@ -41,12 +42,15 @@ pub struct ParsedDataTRS {
 }
 
 #[derive(Debug)]
+#[derive(serde::Serialize)]
+#[derive(Clone)]
 pub struct Rule {
     pub left: Term,
     pub right: Term,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[derive(serde::Serialize)]
 pub struct Term {
     pub value: String,
     pub childs: Vec<Term>,
