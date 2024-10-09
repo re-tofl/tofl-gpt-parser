@@ -16,8 +16,21 @@ pub enum ParsedData {
     TRS(ParsedDataTRS),
 }
 
+pub type ParsedDataInterpret = Vec<ParsedInterpretFunction>;
+
 #[derive(Debug)]
-pub struct ParsedDataInterpret {}
+pub struct ParsedInterpretFunction {
+    pub(crate) name: String,
+    pub(crate) variables: Vec<String>,
+    pub(crate) expression: String,
+}
+
+#[derive(Debug)]
+pub struct Model {
+    pub variables: HashSet<char>,
+    pub constants: HashSet<char>,
+    pub functions: HashSet<char>,
+}
 
 #[derive(Debug)]
 pub struct ParsedDataTRS {

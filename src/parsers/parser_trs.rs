@@ -6,9 +6,9 @@ use crate::models::data_structures::{Rule, Term, Types};
 #[derive(Debug)]
 pub struct ParserTRS {
     parser: Parser,
-    variables: HashSet<char>,
-    constants: HashSet<char>,
-    functions: HashSet<char>,
+    pub variables: HashSet<char>,
+    pub constants: HashSet<char>,
+    pub functions: HashSet<char>,
 }
 
 impl ParserTRS {
@@ -26,7 +26,8 @@ impl ParserTRS {
         self.parser.peek()?;
         for c in expected.chars() {
             if self.parser.read_exact_char(c)? {
-                return Err(self.parser.format_error(c.to_string()));
+                return Err(format!("пробелы в слове variables"));
+                //return Err(self.parser.format_error(c.to_string()));
             }
         }
         self.parser.read_exact_char('=')?;
@@ -86,7 +87,6 @@ impl ParserTRS {
     g = f
      */
     fn parse_term(&mut self) -> Result<Term, String> {
-        self.parser.peek()?;
         let c = self.parser.peek()?;
         if !c.is_alphabetic() {
             return Err(self.parser.format_error("буква".parse().unwrap()));
