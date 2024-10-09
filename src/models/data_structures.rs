@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
 pub struct Parser {
@@ -31,14 +31,14 @@ pub struct ParsedDataTRS {
     pub rules: Vec<Rule>,
     pub variables: HashSet<char>,
     pub constants: HashSet<char>,
-    pub functions: HashSet<char>,
+    pub functions: HashMap<char, i32>,
 }
 
 #[derive(Debug)]
 pub struct Model {
     pub variables: HashSet<char>,
     pub constants: HashSet<char>,
-    pub functions: HashSet<char>,
+    pub functions: HashMap<char, i32>,
 }
 
 #[derive(Debug)]
