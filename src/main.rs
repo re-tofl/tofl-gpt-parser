@@ -1,9 +1,6 @@
-mod server;
-mod parsers;
-mod models;
+use tofl_gpt_parser;
 
-use server::start_server;
 fn main() {
     println!("Запуск сервера парсера!");
-    start_server();
+    tofl_gpt_parser::server::start_server()
 }

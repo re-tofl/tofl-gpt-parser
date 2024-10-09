@@ -19,17 +19,11 @@ pub enum ParsedData {
 pub type ParsedDataInterpret = Vec<ParsedInterpretFunction>;
 
 #[derive(Debug)]
+#[derive(serde::Serialize)]
 pub struct ParsedInterpretFunction {
     pub(crate) name: String,
     pub(crate) variables: Vec<String>,
     pub(crate) expression: String,
-}
-
-#[derive(Debug)]
-pub struct Model {
-    pub variables: HashSet<char>,
-    pub constants: HashSet<char>,
-    pub functions: HashSet<char>,
 }
 
 #[derive(Debug)]
@@ -41,12 +35,22 @@ pub struct ParsedDataTRS {
 }
 
 #[derive(Debug)]
+pub struct Model {
+    pub variables: HashSet<char>,
+    pub constants: HashSet<char>,
+    pub functions: HashSet<char>,
+}
+
+#[derive(Debug)]
+#[derive(serde::Serialize)]
+#[derive(Clone)]
 pub struct Rule {
     pub left: Term,
     pub right: Term,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[derive(serde::Serialize)]
 pub struct Term {
     pub value: String,
     pub childs: Vec<Term>,
@@ -132,15 +136,13 @@ impl Parser {
 
     pub fn read_exact_char(&mut self, expected: char) -> Result<(bool), String> {
         let start_pos = self.pos;
-        let current = self.next()?;
+        let current = self.peek()?;
         if current == expected {
+            self.next()?;
             // Возвращаем true, если были считаны пробельные символы
             Ok(start_pos != self.pos - 1)
         } else {
-            Err(format!(
-                "Ошибка на строке {}, позиции {}: ожидался символ '{}', но был '{}'",
-                self.line, self.pos_in_line, expected, current
-            ))
+            Err(self.format_error(expected.to_string()))
         }
     }
 
