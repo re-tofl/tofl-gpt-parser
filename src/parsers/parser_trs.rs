@@ -33,7 +33,10 @@ impl ParserTRS {
         self.parser.read_exact_char('=')?;
         loop {
             if self.parser.peek()?.is_alphabetic() {
-                self.variables.insert(self.parser.next()?);
+                let current_variable = self.parser.next()?;
+                if !self.variables.insert(current_variable) {
+                    return Err(format!("Переменная {} объявлена несколько раз", current_variable));
+                }
             } else {
                 break;
             }
@@ -115,7 +118,7 @@ impl ParserTRS {
             }
             let args = self.parse_arg_list()?;
 
-            if *self.functions.get(&c).unwrap() == -1{
+            if *self.functions.get(&c).unwrap() == -1 {
                 self.functions.insert(c, args.len() as i32);
             } else if *self.functions.get(&c).unwrap() != args.len() as i32 {
                 return Err(self.parser.format_arity_error(c, self.functions.get(&c).unwrap().to_string(), args.len().to_string()));

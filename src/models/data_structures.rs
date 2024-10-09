@@ -185,7 +185,7 @@ impl Parser {
     }
 
     pub fn format_arity_error(&mut self,function: char, expected: String, received: String) -> String {
-        format!("Не совпадает арность функции {}, ожидаемое количество аргументов: {} , получили: {}.",
+        format!("Не совпадает арность функции {}, ожидаемое количество аргументов: {} , получили: {}",
                 function ,expected, received)
     }
 

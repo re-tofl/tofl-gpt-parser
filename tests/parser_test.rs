@@ -34,7 +34,17 @@ mod tests {
         let mut parser_trs = parsers::ParserTRS::new(input);
         match parser_trs.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
-            Err(e) => { assert_eq!(e, "Не совпадает арность функции f, ожидаемое количество аргументов: 1 , получили: 2.") }
+            Err(e) => { assert_eq!(e, "Не совпадает арность функции f, ожидаемое количество аргументов: 1 , получили: 2") }
+        }
+    }
+
+    #[test]
+    fn test_trs4() {
+        let input = "variables = x,y,x\nf(x) = g\nf(x,y) = k(x)";
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => { panic!("должна вернуться ошибка") }
+            Err(e) => { assert_eq!(e, "Переменная x объявлена несколько раз") }
         }
     }
 
