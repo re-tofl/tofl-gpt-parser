@@ -30,10 +30,13 @@ impl ParserTRS {
             }
             self.parser.next()?;
         }
+        // Non-fatal check (if = sign is missing => accumulate error and then
+        // parse list of variables
         self.parser.read_exact_char('=')?;
         loop {
             if self.parser.peek()?.is_alphabetic() {
                 let current_variable = self.parser.next()?;
+                // Non-fatal, accumulate error, no extra behaviour is necessary
                 if !self.variables.insert(current_variable) {
                     return Err(format!("Переменная {} объявлена несколько раз", current_variable));
                 }
@@ -48,6 +51,7 @@ impl ParserTRS {
             }
         }
         self.parser.read_eol()?;
+        // TODO(Переписать ошибку на русский)
         if self.variables.is_empty() {
             return Err("variables not found".to_string());
         }
@@ -68,6 +72,7 @@ impl ParserTRS {
         }
 
         if rules.is_empty() {
+            // TODO(Переписать ошибку на русский)
             return Err("rules not found".to_string());
         }
         Ok((rules))
