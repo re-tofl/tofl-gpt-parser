@@ -160,16 +160,21 @@ impl Parser {
             Ok(_) => {
                 match current? {
                     '\n' => {
-                        self.next()?;
+                        self.read_exact_char('\n')?;
                         Ok(())
                     },
                     '\r' => {
-                        self.next()?;
-                        if self.peek()? == '\n' {
-                            self.next()?;
-                            Ok(())
-                        } else {
-                            Err(self.format_error("eol".parse().unwrap()))
+                        self.read_exact_char('\r')?;
+                        match self.peek() {
+                            Err(_) => Ok(()),
+                            Ok(symbol) => {
+                                if symbol == '\n' {
+                                    self.read_exact_char('\n')?;
+                                    return Ok(())
+                                };
+
+                                Ok({})
+                            }
                         }
                     },
                     _ => Err(self.format_error("eol".parse().unwrap())),

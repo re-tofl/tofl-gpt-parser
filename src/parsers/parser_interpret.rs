@@ -65,6 +65,7 @@ impl ParserInterpret {
         self.parser.read_exact_char('(')?;
 
         let variables = self.parse_function_arguments()?;
+        //TODO check that func has right number of arguments
 
         //skip =
         self.parser.read_exact_char('=')?;
@@ -121,7 +122,10 @@ impl ParserInterpret {
     fn parse_variable(&mut self) -> Result<String, String> {
         let name = self.parser.next()?;
 
-        //TODO check name is variable
+        if !name.is_alphabetic(){
+            return Err(format!("Expected alphabetic name, got {}", name))
+        }
+
         Ok(name.to_string())
     }
 
@@ -129,7 +133,7 @@ impl ParserInterpret {
         let mut variables = HashSet::new();
 
         loop {
-            //TODO check that variables don't repeat
+            //TODO check that variable name doesn't match name of function or const
             variables.insert(self.parse_variable()?.to_string());
 
             let punctuation = self.parser.next()?;
@@ -187,7 +191,7 @@ impl ParserInterpret {
         }
 
         let mut variable = self.parse_variable()?;
-        // TODO check variables contains variable
+        // TODO check arguments contain variable
         let mut degree = String::new();
 
         loop {
@@ -222,10 +226,8 @@ impl ParserInterpret {
             }
 
             variable = self.parse_variable()?;
-            // TODO check variables contains variable
+            // TODO check arguments contains variable
         }
-
-
     }
 
     fn parse_degree(&mut self) -> Result<String, String> {
