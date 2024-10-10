@@ -1,20 +1,26 @@
 use std::string::String;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use super::Parse;
-use crate::models::{ParsedData, ParsedDataInterpret, Parser};
-use crate::models::data_structures::{Model, ParsedInterpretFunction};
+use crate::models::{ParsedData, Parser};
+use crate::models::data_structures::{Model, ParsedInterpretFunction, Types};
 
 #[derive(Debug)]
 pub struct ParserInterpret {
     parser: Parser,
-    model: Model,
+    model_from_trs: Model,
+    own_model: Model,
 }
 
 impl ParserInterpret {
     pub fn new(input: &str, model: Model) -> Self {
         ParserInterpret {
             parser: Parser::new(input),
-            model,
+            model_from_trs: model,
+            own_model: Model{
+                variables: HashSet::new(),
+                constants: HashSet::new(),
+                functions: HashMap::new(),
+            },
         }
     }
 }
@@ -39,8 +45,19 @@ impl Parse for ParserInterpret {
             }
         }
 
+        for (k, v) in &self.own_model.functions {
+            if self.model_from_trs.functions.get(k).unwrap() != v{
+                return Err(format!("Функция {} была объявлена в TRS, но её нету в интерпретации", k))
+            }
+        }//non fatal
+
+        for v in &self.own_model.constants {
+            if !self.model_from_trs.constants.contains(v){
+                return Err(format!("Константа {} была объявлена в TRS, но её нету в интерпретации", v))
+            }
+        } //non fatal
+
         Ok(ParsedData::Interpret(result))
-        //TODO check that all of the constants and functions are declared
     }
 }
 
@@ -48,9 +65,9 @@ impl ParserInterpret {
     fn parse_function_or_const(&mut self) -> Result<ParsedInterpretFunction, String> {
         let name = self.parser.peek()?;
 
-        if self.model.functions.contains_key(&name) {
+        if self.model_from_trs.functions.contains_key(&name) {
             return self.parse_function()
-        } else if self.model.constants.contains(&name) {
+        } else if self.model_from_trs.constants.contains(&name) {
             return self.parse_constant()
         }
 
@@ -59,18 +76,24 @@ impl ParserInterpret {
 
     fn parse_function(&mut self) -> Result<ParsedInterpretFunction, String> {
         let name = self.parser.next()?;
-        //TODO check func name
+        if !self.model_from_trs.functions.contains_key(&name) {
+            return Err(format!("Функция {} не объявлена в TRS", name));
+        } // non fatal
 
         //skip (
         self.parser.read_exact_char('(')?;
 
-        let variables = self.parse_function_arguments()?;
-        //TODO check that func has right number of arguments
+        let (variables, num_of_variables) = self.parse_function_arguments()?;
+        if num_of_variables != *self.model_from_trs.functions.get(&name).unwrap() {
+            return Err(format!("Количество переменных в интепретации функции {} не совпадает с количеством переменных в TRS", name));
+        } // non fatal
 
         //skip =
         self.parser.read_exact_char('=')?;
 
         let expression = self.parse_polynomial_expression(&variables)?;
+
+        self.own_model.functions.insert(name, num_of_variables);
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
@@ -81,11 +104,15 @@ impl ParserInterpret {
 
     fn parse_constant(&mut self) -> Result<ParsedInterpretFunction, String> {
         let name = self.parser.next()?;
-        //TODO check const name
+        if !self.model_from_trs.constants.contains(&name) {
+            return Err(format!("Константы {} нет в TRS, но она присутствует в интепретации", name));
+        } //non fatal
 
         self.parser.read_exact_char('=')?;
 
         let number = self.parse_number_string()?;
+
+        self.own_model.constants.insert(name);
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
@@ -129,17 +156,23 @@ impl ParserInterpret {
         Ok(name.to_string())
     }
 
-    fn parse_function_arguments(&mut self) -> Result<HashSet<String>, String> {
+    fn parse_function_arguments(&mut self) -> Result<(HashSet<String>, i32), String> {
         let mut variables = HashSet::new();
-
+        let mut num_of_variables = 0;
         loop {
-            //TODO check that variable name doesn't match name of function or const
-            variables.insert(self.parse_variable()?.to_string());
+            let current = self.parse_variable()?.to_string();
+            if self.model_from_trs.functions.contains_key(&current.chars().nth(0).unwrap()){
+                return Err(self.parser.format_type_error(Types::VARIABLE, Types::FUNCTION));
+            } else if self.own_model.constants.contains(&current.chars().nth(0).unwrap()){
+                return Err(self.parser.format_type_error(Types::VARIABLE, Types::CONSTANT));
 
+            } //non fatal
+            variables.insert(current);
+            num_of_variables += 1;
             let punctuation = self.parser.next()?;
 
             if punctuation == ')' {
-                return Ok(variables);
+                return Ok((variables, num_of_variables));
             } else if punctuation != ',' {
                 return Err(format!("Expected ',' or ')',  got '{}'", punctuation));
             }
@@ -190,7 +223,10 @@ impl ParserInterpret {
         }
 
         let mut variable = self.parse_variable()?;
-        // TODO check arguments contain variable
+        if !variables.contains(&variable) {
+            return Err(format!("Переменная {} не содержится в левой части", variable));
+        }
+        // TODO переформулировать
         let mut degree = String::new();
 
         loop {
@@ -225,7 +261,10 @@ impl ParserInterpret {
             }
 
             variable = self.parse_variable()?;
-            // TODO check arguments contains variable
+            if !variables.contains(&variable) {
+                return Err(format!("Переменная {} не содержится в левой части", variable));
+            }
+            // TODO переформулировать
         }
     }
 
