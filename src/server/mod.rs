@@ -5,7 +5,7 @@ use rouille::{router};
 use handlers::handle_request;
 
 pub fn start_server() {
-    let addr = "127.0.0.1:8090";
+    let addr = "0.0.0.0:8090";
     println!("Now listening on {addr}");
 
     rouille::start_server(addr, move |request| {
