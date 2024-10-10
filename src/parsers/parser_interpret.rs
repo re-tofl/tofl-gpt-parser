@@ -139,7 +139,6 @@ impl ParserInterpret {
             let punctuation = self.parser.next()?;
 
             if punctuation == ')' {
-                //TODO check the number or variables
                 return Ok(variables);
             } else if punctuation != ',' {
                 return Err(format!("Expected ',' or ')',  got '{}'", punctuation));
