@@ -209,7 +209,8 @@ impl ParserInterpret {
                     if punctuation == '\n' || punctuation == '\r' {
                         break;
                     } else if punctuation != '+' {
-                        return Err(format!("Expected '+' or eol,  got '{}'", punctuation));
+                        return Err(format!("{}Ожидалось '+' or eol, считано '{}'",
+                                           self.parser.format_position(), punctuation));
                     } else {
                         self.parser.read_exact_char('+')?;
                     }
