@@ -23,13 +23,18 @@ struct ErrorJson {
 #[derive(serde::Serialize)]
 struct ResponseJson {
     pub json_TRS: Vec<Rule>,
-    pub json_interpret: ParsedDataInterpret,
+    pub json_interpret: functions,
+}
+
+#[derive(serde::Serialize)]
+struct functions {
+    pub functions: ParsedDataInterpret
 }
 
 pub fn handle_request(request: &rouille::Request) -> rouille::Response {
     let json: InputJson = try_or_400!(rouille::input::json_input(request));
     let mut err = ErrorJson { error_trs: Vec::new(), error_interpretation: Vec::new() };
-    let mut res = ResponseJson { json_TRS: Vec::new(), json_interpret: Vec::new() };
+    let mut res = ResponseJson { json_TRS: Vec::new(), json_interpret: functions{ functions: vec![] } };
 
     let mut parser_trs = ParserTRS::new(&json.TRS[..]);
     match parser_trs.parse() {
@@ -59,8 +64,8 @@ pub fn handle_request(request: &rouille::Request) -> rouille::Response {
         Ok(result) => {
             println!("Парсинг Interpet: {:?}", result);
             res.json_interpret = match result {
-                Interpret(interpret) => interpret,
-                _ => Vec::new()
+                Interpret(interpret) => functions{functions: interpret},
+                _ => functions{functions: ParsedDataInterpret::default()}
             };
         }
         Err(e) => err.error_interpretation.push(e),
