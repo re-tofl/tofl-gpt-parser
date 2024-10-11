@@ -188,6 +188,11 @@ impl Parser {
         }
     }
 
+    pub fn format_position(&mut self) -> String {
+        format!("Ошибка в строке {}, на позиции {}. ",
+                self.line, self.pos_in_line)
+    }
+
     pub fn format_error(&mut self, expected: String) -> String {
         format!("Ошибка в строке {}, на позиции {}, ожидалось {}, считано '{}'",
                 self.line, self.pos_in_line, expected, self.input[self.pos as usize])
@@ -199,7 +204,7 @@ impl Parser {
     }
 
     pub fn format_arity_error(&mut self,function: char, expected: String, received: String) -> String {
-        format!("Не совпадает арность функции {}, ожидаемое количество аргументов: {} , получили: {}",
+        format!("Не совпадает арность функции {}, ожидаемое количество аргументов: {} , считано: {}",
                 function ,expected, received)
     }
 

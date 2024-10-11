@@ -47,7 +47,7 @@ mod tests {
         let mut parser_trs = parsers::ParserTRS::new(input);
         match parser_trs.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
-            Err(e) => { assert_eq!(e, "Не совпадает арность функции f, ожидаемое количество аргументов: 1 , получили: 2") }
+            Err(e) => { assert_eq!(e, "Не совпадает арность функции f, ожидаемое количество аргументов: 1 , считано: 2") }
         }
     }
 
@@ -58,6 +58,171 @@ mod tests {
         match parser_trs.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
             Err(e) => { assert_eq!(e, "Переменная x объявлена несколько раз") }
+        }
+    }
+
+    #[test]
+    fn test_interpret_function_not_declared() { //Функция была объявлена в TRS, но её нет в интерпретации
+        let input1 = "F(m,n) = m+n\n";
+        let mut functions = HashMap::new();
+        functions.insert('F', 2);
+        functions.insert('A', 1);
+        let mut variables = HashSet::new();
+        variables.insert('m');
+        variables.insert('n');
+        let mut parser_interpret = ParserInterpret::new(input1, Model{
+            variables,
+            constants: HashSet::new(),
+            functions,
+        });
+
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => {  }
+        }
+    }
+
+    #[test]
+    fn test_interpret_constant_not_declared() { //Константа была объявлена в TRS, но её нет в интерпретации
+        let input1 = "F(m,n) = m+n\n";
+        let mut functions = HashMap::new();
+        functions.insert('F', 2);
+        let mut variables = HashSet::new();
+        variables.insert('m');
+        variables.insert('n');
+        let mut constants = HashSet::new();
+        constants.insert('p');
+        let mut parser_interpret = ParserInterpret::new(input1, Model{ variables, constants, functions, });
+
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret_eof_f_const() { //ожидалось: функция или константа, считано EOF
+        let input1 = "";
+        let mut parser_interpret = ParserInterpret::new(input1, Model{
+            variables: HashSet::new(), constants: HashSet::new(), functions:HashMap::new(),
+        });
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret_expected_f_const() { //ожидалось: функция или константа, считано что-то
+        let input1 = "😎";
+        let mut parser_interpret = ParserInterpret::new(input1, Model{
+            variables: HashSet::new(), constants: HashSet::new(), functions:HashMap::new(),
+        });
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret_f_not_declared_in_trs() { //Константа была объявлена в TRS, но её нет в интерпретации
+        let input1 = "F(m,n) = 2m+n\n";
+        let mut functions = HashMap::new();
+        let mut variables = HashSet::new();
+        let mut constants = HashSet::new();
+        let mut parser_interpret = ParserInterpret::new(input1, Model{ variables, constants, functions, });
+
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret_0_coef() { //Коэффициент не может быть равен 0
+        let input1 = "F(m) = 0*m\n";
+        let mut functions = HashMap::new();
+        functions.insert('F', 1);
+        let mut variables = HashSet::new();
+        variables.insert('m');
+        let mut constants = HashSet::new();
+        let mut parser_interpret = ParserInterpret::new(input1, Model{ variables, constants, functions, });
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret_expected_alphabetic_var() { //Ожидалась буква (в названии переменной)
+        let input1 = "F(m,n) = m+🔥";
+        let mut functions = HashMap::new();
+        functions.insert('F', 2);
+        let mut variables = HashSet::new();
+        variables.insert('m');
+        variables.insert('n');
+        let mut constants = HashSet::new();
+        let mut parser_interpret = ParserInterpret::new(input1, Model{ variables, constants, functions, });
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret_expected_bracket() { // Ожидалось ',' или ')', считано что-то
+        let input1 = "F(m,n| = m+n";
+        let mut functions = HashMap::new();
+        functions.insert('F', 2);
+        let mut variables = HashSet::new();
+        variables.insert('m');
+        variables.insert('n');
+        let mut constants = HashSet::new();
+        let mut parser_interpret = ParserInterpret::new(input1, Model{ variables, constants, functions, });
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret_expected_bracket_eof() { //ожидалось: ')' или ',', считано EOF
+        let input1 = "F(m,n";
+        let mut functions = HashMap::new();
+        functions.insert('F', 2);
+        let mut variables = HashSet::new();
+        variables.insert('m');
+        variables.insert('n');
+        let mut constants = HashSet::new();
+        let mut parser_interpret = ParserInterpret::new(input1, Model{ variables, constants, functions, });
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret_expected_plus() { //ожидалось: ')' или ',', считано EOF
+        let input1 = "F(m) = m,";
+        let mut functions = HashMap::new();
+        functions.insert('F', 1);
+        let mut variables = HashSet::new();
+        variables.insert('m');
+        let mut constants = HashSet::new();
+        let mut parser_interpret = ParserInterpret::new(input1, Model{ variables, constants, functions, });
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
         }
     }
 
@@ -145,15 +310,13 @@ mod tests {
     }
 
     #[test]
-    fn test_interpret5() {
+    fn test_function_arity_mismatch() { //Количество переменных в интерпретации функции f не совпадает с количеством переменных в TRS
         let input = "f(x,y)=x";
         let mut variables = HashSet::new();
         variables.insert('x');
         variables.insert('y');
         let mut functions = HashMap::new();
         functions.insert('f', 1);
-
-
         let mut parser = parsers::ParserInterpret::new(input, Model{
             variables,
             constants: Default::default(),
@@ -162,12 +325,12 @@ mod tests {
 
         match parser.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
-            Err(e) => {}
+            Err(e) => {println!("{}", e)}
         }
     }
 
     #[test]
-    fn test_interpret6() {
+    fn test_interpret6() { //Переменная z не указана в качестве аргумента функции
         let input = "f(x)=z";
         let mut variables = HashSet::new();
         variables.insert('x');
@@ -183,7 +346,7 @@ mod tests {
 
         match parser.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
-            Err(e) => {}
+            Err(e) => {println!("{}", e)}
         }
     }
 
