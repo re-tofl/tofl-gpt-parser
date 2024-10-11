@@ -19,6 +19,7 @@ impl ParserInterpret {
             model_from_trs: model,
             own_functions: HashMap::new(),
             own_constants: HashSet::new(),
+
         }
     }
 }
@@ -74,13 +75,13 @@ impl Parse for ParserInterpret {
         if !self.parser.get_errors().is_empty() {
             return Err(self.parser.get_errors());
         }
-
         Ok(ParsedData::Interpret(result))
     }
 }
 
 impl ParserInterpret {
     fn parse_function_or_const(&mut self) -> Result<ParsedInterpretFunction, String> {
+
         let name= match self.parser.peek(){
             Ok(received) => received,
             Err(_) => return Err(self.parser.format_eof_error("функция или константа".to_string()))
@@ -101,6 +102,7 @@ impl ParserInterpret {
         };
         if !self.model_from_trs.functions.contains_key(&name) {
             self.parser.add_error(format!("Функция {} не объявлена в TRS", name));
+
         } // non fatal
 
         //skip (
@@ -111,6 +113,7 @@ impl ParserInterpret {
             let pos = self.parser.format_position();
             self.parser.add_error(format!("{}Количество переменных в интерпретации функции {} не совпадает с количеством переменных в TRS",
                                           pos, name));
+
         } // non fatal
 
         //skip =
@@ -119,6 +122,7 @@ impl ParserInterpret {
         let expression = self.parse_polynomial_expression(&variables)?;
 
         self.own_functions.insert(name, num_of_variables);
+
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
@@ -134,6 +138,7 @@ impl ParserInterpret {
         };
         if !self.model_from_trs.constants.contains(&name) {
             self.parser.add_error(format!("Константы {} нет в TRS, но она присутствует в интерпретации", name));
+
         } //non fatal
 
         self.parser.read_exact_char('=')?;
@@ -141,6 +146,7 @@ impl ParserInterpret {
         let number = self.parse_number_string()?;
 
         self.own_constants.insert(name);
+
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
@@ -207,6 +213,7 @@ impl ParserInterpret {
                 Err(_) => return Err(self.parser.format_eof_error("')' или ','".to_string()))
             };
 
+
             if punctuation == ')' {
                 return Ok((variables, num_of_variables));
             } else if punctuation != ',' {
@@ -265,6 +272,7 @@ impl ParserInterpret {
         }
 
         let mut variable = String::new();
+
         let mut degree = String::new();
         loop {
             match self.parse_variable() {
@@ -309,6 +317,7 @@ impl ParserInterpret {
                 coefficient = self.parse_number_string()?;
                 self.parser.read_exact_char('*')?;
             }
+
         }
     }
 
