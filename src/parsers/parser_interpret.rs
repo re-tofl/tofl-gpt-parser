@@ -8,7 +8,8 @@ use crate::models::data_structures::{Model, ParsedInterpretFunction, Types};
 pub struct ParserInterpret {
     parser: Parser,
     model_from_trs: Model,
-    own_model: Model,
+    own_functions: HashMap<char,i32>,
+    own_constants: HashSet<char>,
 }
 
 impl ParserInterpret {
@@ -16,11 +17,8 @@ impl ParserInterpret {
         ParserInterpret {
             parser: Parser::new(input),
             model_from_trs: model,
-            own_model: Model{
-                variables: HashSet::new(),
-                constants: HashSet::new(),
-                functions: HashMap::new(),
-            },
+            own_functions: HashMap::new(),
+            own_constants: HashSet::new(),
         }
     }
 }
@@ -45,15 +43,15 @@ impl Parse for ParserInterpret {
             }
         }
 
-        for (k, v) in &self.own_model.functions {
+        for (k, v) in &self.own_functions {
             if self.model_from_trs.functions.get(k).unwrap() != v{
-                return Err(format!("Функция {} была объявлена в TRS, но её нету в интерпретации", k))
+                return Err(format!("Функция {} была объявлена в TRS, но её нет в интерпретации", k))
             }
         }//non fatal
 
-        for v in &self.own_model.constants {
+        for v in &self.own_constants {
             if !self.model_from_trs.constants.contains(v){
-                return Err(format!("Константа {} была объявлена в TRS, но её нету в интерпретации", v))
+                return Err(format!("Константа {} была объявлена в TRS, но её нет в интерпретации", v))
             }
         } //non fatal
 
@@ -93,7 +91,7 @@ impl ParserInterpret {
 
         let expression = self.parse_polynomial_expression(&variables)?;
 
-        self.own_model.functions.insert(name, num_of_variables);
+        self.own_functions.insert(name, num_of_variables);
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
@@ -112,7 +110,7 @@ impl ParserInterpret {
 
         let number = self.parse_number_string()?;
 
-        self.own_model.constants.insert(name);
+        self.own_constants.insert(name);
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
@@ -163,7 +161,7 @@ impl ParserInterpret {
             let current = self.parse_variable()?.to_string();
             if self.model_from_trs.functions.contains_key(&current.chars().nth(0).unwrap()){
                 return Err(self.parser.format_type_error(Types::VARIABLE, Types::FUNCTION));
-            } else if self.own_model.constants.contains(&current.chars().nth(0).unwrap()){
+            } else if self.own_constants.contains(&current.chars().nth(0).unwrap()){
                 return Err(self.parser.format_type_error(Types::VARIABLE, Types::CONSTANT));
 
             } //non fatal
@@ -224,9 +222,8 @@ impl ParserInterpret {
 
         let mut variable = self.parse_variable()?;
         if !variables.contains(&variable) {
-            return Err(format!("Переменная {} не содержится в левой части", variable));
+            return Err(format!("Переменная {} не указана в качестве аргумента функции", variable));
         }
-        // TODO переформулировать
         let mut degree = String::new();
 
         loop {
@@ -262,9 +259,8 @@ impl ParserInterpret {
 
             variable = self.parse_variable()?;
             if !variables.contains(&variable) {
-                return Err(format!("Переменная {} не содержится в левой части", variable));
+                return Err(format!("Переменная {} не указана в качестве аргумента функции", variable));
             }
-            // TODO переформулировать
         }
     }
 
