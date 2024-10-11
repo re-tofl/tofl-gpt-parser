@@ -37,7 +37,7 @@ mod tests {
         let mut parser_trs = parsers::ParserTRS::new(input);
         match parser_trs.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
-            Err(e) => { assert_eq!(e, "Ошибка в строке 2, на позиции 9, ожидалась константа или переменная, считана функция") }
+            Err(e) => { assert_eq!(e[0], "Ошибка в строке 2, на позиции 9, ожидалась константа или переменная, считана функция") }
         }
     }
 
@@ -47,7 +47,7 @@ mod tests {
         let mut parser_trs = parsers::ParserTRS::new(input);
         match parser_trs.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
-            Err(e) => { assert_eq!(e, "Не совпадает арность функции f, ожидаемое количество аргументов: 1 , считано: 2") }
+            Err(e) => { assert_eq!(e[0], "Не совпадает арность функции f, ожидаемое количество аргументов: 1 , считано: 2") }
         }
     }
 
@@ -57,7 +57,43 @@ mod tests {
         let mut parser_trs = parsers::ParserTRS::new(input);
         match parser_trs.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
-            Err(e) => { assert_eq!(e, "Переменная x объявлена несколько раз") }
+            Err(e) => { assert_eq!(e[0], "Переменная x объявлена несколько раз") }
+        }
+    }
+
+    #[test]
+    fn test_trs_no_equals_sign() {
+        let input = "variables  x,y\nf(x) = g\nf(x,y) = k(x)";
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => { panic!("должна вернуться ошибка") }
+            Err(e) => {
+                println!("{:?}", e)
+            }
+        }
+    }
+
+    #[test]
+    fn test_interpret_function_constant_not_declared() { //Функция была объявлена в TRS, но её нет в интерпретации
+        let input1 = "F(m,n) = m+n\n";
+        let mut functions = HashMap::new();
+        functions.insert('F', 2);
+        functions.insert('A', 1);
+        let mut variables = HashSet::new();
+        variables.insert('m');
+        variables.insert('n');
+        let mut constants = HashSet::new();
+        constants.insert('p');
+        let mut parser_interpret = ParserInterpret::new(input1, Model{
+            variables,
+            constants,
+            functions,
+        });
+
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
         }
     }
 
@@ -325,7 +361,7 @@ mod tests {
 
         match parser.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
-            Err(e) => {println!("{}", e)}
+            Err(e) => {println!("{:?}", e)}
         }
     }
 
@@ -346,7 +382,7 @@ mod tests {
 
         match parser.parse() {
             Ok(res) => { panic!("должна вернуться ошибка") }
-            Err(e) => {println!("{}", e)}
+            Err(e) => {println!("{:?}", e)}
         }
     }
 

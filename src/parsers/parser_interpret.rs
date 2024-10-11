@@ -24,16 +24,29 @@ impl ParserInterpret {
 }
 
 impl Parse for ParserInterpret {
-    fn parse(&mut self) -> Result<(ParsedData), String> {
+    fn parse(&mut self) -> Result<(ParsedData), Vec<String>> {
         let mut result = Vec::new();
 
         loop {
-            result.push(self.parse_function_or_const()?);
+            let res1 = match self.parse_function_or_const(){
+                Ok(r) => r,
+                Err(e) => {
+                    self.parser.add_error(e);
+                    return Err(self.parser.get_errors());
+                }
+            };
+            result.push(res1);
 
             match self.parser.peek() {
                 Err(_) => break,
                 Ok(_) => {
-                    self.parser.read_eol()?;
+                    match self.parser.read_eol(){
+                        Ok(_) => (),
+                        Err(e) => {
+                            self.parser.add_error(e);
+                            return Err(self.parser.get_errors());
+                        }
+                    }
 
                     match self.parser.peek() {
                         Err(_) => break,
@@ -46,7 +59,7 @@ impl Parse for ParserInterpret {
         for (k, v) in &self.model_from_trs.functions {
             match self.own_functions.get(k) {
                 None => {
-                    return Err(format!("Функция {} была объявлена в TRS, но её нет в интерпретации", k))
+                    self.parser.add_error(format!("Функция {} была объявлена в TRS, но её нет в интерпретации", k));
                 }
                 Some(_) => ()
             }
@@ -54,9 +67,13 @@ impl Parse for ParserInterpret {
 
         for v in &self.model_from_trs.constants {
             if !self.own_constants.contains(v){
-                return Err(format!("Константа {} была объявлена в TRS, но её нет в интерпретации", v))
+                self.parser.add_error(format!("Константа {} была объявлена в TRS, но её нет в интерпретации", v))
             }
         } //non fatal
+
+        if !self.parser.get_errors().is_empty() {
+            return Err(self.parser.get_errors());
+        }
 
         Ok(ParsedData::Interpret(result))
     }
@@ -83,7 +100,7 @@ impl ParserInterpret {
             Err(_) => return Err(self.parser.format_eof_error("функция".to_string()))
         };
         if !self.model_from_trs.functions.contains_key(&name) {
-            return Err(format!("Функция {} не объявлена в TRS", name));
+            self.parser.add_error(format!("Функция {} не объявлена в TRS", name));
         } // non fatal
 
         //skip (
@@ -91,8 +108,9 @@ impl ParserInterpret {
 
         let (variables, num_of_variables) = self.parse_function_arguments()?;
         if num_of_variables != *self.model_from_trs.functions.get(&name).unwrap() {
-            return Err(format!("{}Количество переменных в интерпретации функции {} не совпадает с количеством переменных в TRS",
-                               self.parser.format_position(), name));
+            let pos = self.parser.format_position();
+            self.parser.add_error(format!("{}Количество переменных в интерпретации функции {} не совпадает с количеством переменных в TRS",
+                                          pos, name));
         } // non fatal
 
         //skip =
@@ -115,7 +133,7 @@ impl ParserInterpret {
             Err(_) => return Err(self.parser.format_eof_error("константа".to_string()))
         };
         if !self.model_from_trs.constants.contains(&name) {
-            return Err(format!("Константы {} нет в TRS, но она присутствует в интерпретации", name));
+            self.parser.add_error(format!("Константы {} нет в TRS, но она присутствует в интерпретации", name));
         } //non fatal
 
         self.parser.read_exact_char('=')?;
@@ -176,10 +194,11 @@ impl ParserInterpret {
         loop {
             let current = self.parse_variable()?.to_string();
             if self.model_from_trs.functions.contains_key(&current.chars().nth(0).unwrap()){
-                return Err(self.parser.format_type_error(Types::VARIABLE, Types::FUNCTION));
+                let e = self.parser.format_type_error(Types::VARIABLE, Types::FUNCTION);
+                self.parser.add_error(e);
             } else if self.own_constants.contains(&current.chars().nth(0).unwrap()){
-                return Err(self.parser.format_type_error(Types::VARIABLE, Types::CONSTANT));
-
+                let e = self.parser.format_type_error(Types::VARIABLE, Types::CONSTANT);
+                self.parser.add_error(e);
             } //non fatal
             variables.insert(current);
             num_of_variables += 1;

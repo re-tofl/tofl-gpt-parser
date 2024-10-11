@@ -47,7 +47,7 @@ pub fn handle_request(request: &rouille::Request) -> rouille::Response {
                 _ => Vec::new()
             };
         }
-        Err(e) => err.error_trs.push(e),
+        Err(mut e) => err.error_trs.append(&mut e),
     };
 
     let model = Model {
@@ -68,7 +68,7 @@ pub fn handle_request(request: &rouille::Request) -> rouille::Response {
                 _ => functions{functions: ParsedDataInterpret::default()}
             };
         }
-        Err(e) => err.error_interpretation.push(e),
+        Err(mut e) => err.error_interpretation.append(&mut e),
     };
     if err.error_trs.len() > 0 || err.error_interpretation.len() > 0 {
         return rouille::Response::json(&err).with_status_code(400);

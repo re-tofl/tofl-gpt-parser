@@ -41,7 +41,15 @@ impl ParserTRS {
         }
         // Non-fatal check (if = sign is missing => accumulate error and then
         // parse list of variables
-        self.parser.read_exact_char('=')?;
+        match self.parser.read_exact_char('='){
+            Ok(_) => (),
+            Err(e) =>{
+                let pos = self.parser.format_position();
+
+                self.parser.add_error(format!("{}Не хватает '=' в списке переменных",
+                pos));
+            }
+        };
         loop {
             let peeked= match self.parser.peek(){
                 Ok(received) => received,
@@ -68,9 +76,8 @@ impl ParserTRS {
             }
         }
         self.parser.read_eol()?;
-        // TODO(Переписать ошибку на русский)
         if self.variables.is_empty() {
-            return Err("variables not found".to_string());
+            return Err(format!("{}У функции не найдено ни одной переменной", self.parser.format_position()));
         }
         Ok(())
     }
@@ -182,10 +189,22 @@ impl ParserTRS {
 }
 
 impl Parse for ParserTRS {
-    fn parse(&mut self) -> Result<(ParsedData), String> {
-        self.parse_variables()?;
+    fn parse(&mut self) -> Result<(ParsedData), Vec<String>> {
+        match self.parse_variables(){
+            Ok(_) => (),
+            Err(e) => {
+                self.parser.add_error(e);
+                return Err(self.parser.get_errors());
+            },
+        };
 
-        let rules = self.parse_rules()?;
+        let rules = match self.parse_rules(){
+            Ok(rules) => rules,
+            Err(e) => {
+                self.parser.add_error(e);
+                return Err(self.parser.get_errors());
+            },
+        };
 
         Ok((ParsedData::TRS(ParsedDataTRS {
             rules,

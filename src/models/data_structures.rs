@@ -8,6 +8,7 @@ pub struct Parser {
     pos_in_line: u32,
     prev_line: u32,
     prev_pos_in_line: u32,
+    errors:  Vec<String>
 }
 
 #[derive(Debug)]
@@ -82,6 +83,7 @@ impl Parser {
             pos_in_line: 0,
             prev_pos_in_line: 0,
             prev_line: 0,
+            errors: Vec::new(),
         }
     }
 
@@ -186,6 +188,14 @@ impl Parser {
             }
             Err(_) => Ok(())
         }
+    }
+
+    pub fn get_errors(&mut self) -> Vec<String>{
+        return self.errors.clone();
+    }
+
+    pub fn add_error(&mut self, message: String) {
+        self.errors.push(message);
     }
 
     pub fn format_position(&mut self) -> String {
