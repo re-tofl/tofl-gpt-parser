@@ -25,6 +25,7 @@ pub fn handle_page(request: &rouille::Request) -> rouille::Response {
         <br>
         <button type="submit">Submit</button>
     </form>
+    <br>
     <div id="result"></div>
 
     <script>
