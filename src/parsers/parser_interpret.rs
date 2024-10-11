@@ -251,7 +251,7 @@ impl ParserInterpret {
             match self.parse_variable() {
                 Ok(name) => variable = name,
                 Err(e) => if coefficient == "" {
-                    return Err(format!("{}Ожидался коэффицент или имя переменной", self.parser.format_position()))
+                    return Err(format!("{}Ожидался коэффицент, имя переменной, '+' или перевод строки", self.parser.format_position()))
                 } else {
                     return Err(e)
                 }
