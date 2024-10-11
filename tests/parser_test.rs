@@ -366,6 +366,25 @@ mod tests {
     }
 
     #[test]
+    fn test_argument_repeat_interpretation() {
+        let input = "f(x,x)=x";
+        let mut variables = HashSet::new();
+        variables.insert('x');
+        let mut functions = HashMap::new();
+        functions.insert('f', 2);
+        let mut parser = parsers::ParserInterpret::new(input, Model{
+            variables,
+            constants: Default::default(),
+            functions,
+        });
+
+        match parser.parse() {
+            Ok(res) => { panic!("должна вернуться ошибка") }
+            Err(e) => {println!("{:?}", e)}
+        }
+    }
+
+    #[test]
     fn test_interpret6() { //Переменная z не указана в качестве аргумента функции
         let input = "f(x)=z";
         let mut variables = HashSet::new();

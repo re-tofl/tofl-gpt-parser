@@ -81,11 +81,11 @@ impl Parse for ParserInterpret {
 
 impl ParserInterpret {
     fn parse_function_or_const(&mut self) -> Result<ParsedInterpretFunction, String> {
-
         let name= match self.parser.peek(){
             Ok(received) => received,
             Err(_) => return Err(self.parser.format_eof_error("функция или константа".to_string()))
         };
+
         if self.model_from_trs.functions.contains_key(&name) {
             return self.parse_function()
         } else if self.model_from_trs.constants.contains(&name) {
@@ -96,13 +96,18 @@ impl ParserInterpret {
     }
 
     fn parse_function(&mut self) -> Result<ParsedInterpretFunction, String> {
-        let name = match self.parser.next(){
-            Ok(received) => received,
+        let pos;
+        let name = match self.parser.peek(){
+            Ok(received) => {
+                pos = self.parser.format_position();
+                self.parser.next()?;
+                received
+            },
             Err(_) => return Err(self.parser.format_eof_error("функция".to_string()))
         };
-        if !self.model_from_trs.functions.contains_key(&name) {
-            self.parser.add_error(format!("Функция {} не объявлена в TRS", name));
 
+        if !self.model_from_trs.functions.contains_key(&name) {
+            self.parser.add_error(format!("{}Функция {} не объявлена в TRS", pos, name));
         } // non fatal
 
         //skip (
@@ -113,7 +118,6 @@ impl ParserInterpret {
             let pos = self.parser.format_position();
             self.parser.add_error(format!("{}Количество переменных в интерпретации функции {} не совпадает с количеством переменных в TRS",
                                           pos, name));
-
         } // non fatal
 
         //skip =
@@ -123,7 +127,6 @@ impl ParserInterpret {
 
         self.own_functions.insert(name, num_of_variables);
 
-
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
             variables: variables.into_iter().collect(),
@@ -132,13 +135,18 @@ impl ParserInterpret {
     }
 
     fn parse_constant(&mut self) -> Result<ParsedInterpretFunction, String> {
-        let name = match self.parser.next(){
-            Ok(received) => received,
+        let pos;
+        let name = match self.parser.peek(){
+            Ok(received) => {
+                pos = self.parser.format_position();
+                self.parser.next()?;
+                received
+            },
             Err(_) => return Err(self.parser.format_eof_error("константа".to_string()))
         };
-        if !self.model_from_trs.constants.contains(&name) {
-            self.parser.add_error(format!("Константы {} нет в TRS, но она присутствует в интерпретации", name));
 
+        if !self.model_from_trs.constants.contains(&name) {
+            self.parser.add_error(format!("{}Константы {} нет в TRS, но она присутствует в интерпретации", pos, name));
         } //non fatal
 
         self.parser.read_exact_char('=')?;
@@ -146,7 +154,6 @@ impl ParserInterpret {
         let number = self.parse_number_string()?;
 
         self.own_constants.insert(name);
-
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
@@ -157,10 +164,13 @@ impl ParserInterpret {
 
     fn parse_number_string(&mut self) -> Result<String, String> {
         let mut number = Vec::new();
+        let mut pos= "0".to_string();
+
         loop {
             match self.parser.peek() {
                 Err(_) => break,
                 Ok(digit) => {
+                    pos = self.parser.format_position();
                     if !digit.is_ascii_digit() {
                         break;
                     }
@@ -174,21 +184,26 @@ impl ParserInterpret {
         let number_string = number.join("");
 
         if number_string == "0" {
-            return Err(format!("{}Коэффициент не может быть равен 0", self.parser.format_position()));
+            self.parser.add_error(format!("{}Коэффициент не может быть равен 0", pos));
         };
 
         Ok(number_string)
     }
 
     fn parse_variable(&mut self) -> Result<String, String> {
-        let name = match self.parser.next(){
-            Ok(received) => received,
+        let pos;
+        let name = match self.parser.peek(){
+            Ok(received) => {
+                pos = self.parser.format_position();
+                self.parser.next()?;
+                received
+            },
             Err(_) => return Err(self.parser.format_eof_error("переменная".to_string()))
         };
 
         if !name.is_alphabetic() {
             return Err(format!("{}Ожидался символ алфавита (буква) в названии переменной, считано: {}",
-                               self.parser.format_position(), name))
+                               pos, name))
         }
 
         Ok(name.to_string())
@@ -206,8 +221,14 @@ impl ParserInterpret {
                 let e = self.parser.format_type_error(Types::VARIABLE, Types::CONSTANT);
                 self.parser.add_error(e);
             } //non fatal
+
+            if variables.contains(&current) {
+                let pos = self.parser.format_position();
+                self.parser.add_error(format!("{}Переменная {} уже была указана в числе аргументов данной функции", pos, current));
+            } //non fatal
             variables.insert(current);
             num_of_variables += 1;
+
             let punctuation = match self.parser.next(){
                 Ok(received) => received,
                 Err(_) => return Err(self.parser.format_eof_error("')' или ','".to_string()))
@@ -272,8 +293,8 @@ impl ParserInterpret {
         }
 
         let mut variable = String::new();
-
         let mut degree = String::new();
+
         loop {
             match self.parse_variable() {
                 Ok(name) => variable = name,
