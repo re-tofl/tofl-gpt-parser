@@ -245,13 +245,22 @@ impl ParserInterpret {
             }
         }
 
-        let mut variable = self.parse_variable()?;
-        if !variables.contains(&variable) {
-            return Err(format!("{}Переменная {} не указана в качестве аргумента функции", self.parser.format_position(), variable));
-        }
+        let mut variable = String::new();
         let mut degree = String::new();
-
         loop {
+            match self.parse_variable() {
+                Ok(name) => variable = name,
+                Err(e) => if coefficient == "" {
+                    return Err(format!("{}Ожидался коэффицент или имя переменной", self.parser.format_position()))
+                } else {
+                    return Err(e)
+                }
+            }
+
+            if !variables.contains(&variable) {
+                return Err(format!("{}Переменная {} не указана в качестве аргумента функции", self.parser.format_position(), variable));
+            }
+
             match self.parser.peek() {
                 Err(_) => return Ok(build_monomial(&coefficient, &variable, &degree)),
                 Ok(symbol) => {
@@ -280,11 +289,6 @@ impl ParserInterpret {
             if symbol.is_ascii_digit() {
                 coefficient = self.parse_number_string()?;
                 self.parser.read_exact_char('*')?;
-            }
-
-            variable = self.parse_variable()?;
-            if !variables.contains(&variable) {
-                return Err(format!("Переменная {} не указана в качестве аргумента функции", variable));
             }
         }
     }
