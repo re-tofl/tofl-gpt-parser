@@ -23,8 +23,17 @@ impl ParserTRS {
 
     fn parse_variables(&mut self) -> Result<(), String> {
         let expected = "variables";
-        self.parser.peek()?;
+        match self.parser.peek(){
+            Ok(_) => (),
+            Err(_) => return Err(self.parser.format_eof_error("объявление переменных (variables=...)".to_string()))
+        }
+
         for c in expected.chars() {
+            let peeked: char;
+            match self.parser.peek_without_skipping(){
+                Ok(received) => peeked = received,
+                Err(_) => return Err(self.parser.format_eof_error(c.to_string()))
+            }
             if self.parser.peek_without_skipping()? != c {
                 return Err(self.parser.format_error(c.to_string()));
             }
@@ -32,9 +41,21 @@ impl ParserTRS {
         }
         // Non-fatal check (if = sign is missing => accumulate error and then
         // parse list of variables
-        self.parser.read_exact_char('=')?;
+        match self.parser.read_exact_char('='){
+            Ok(_) => (),
+            Err(e) =>{
+                let pos = self.parser.format_position();
+
+                self.parser.add_error(format!("{}Не хватает '=' в списке переменных",
+                pos));
+            }
+        };
         loop {
-            if self.parser.peek()?.is_alphabetic() {
+            let peeked= match self.parser.peek(){
+                Ok(received) => received,
+                Err(_) => return Err(self.parser.format_eof_error("переменная".to_string())),
+            };
+            if peeked.is_alphabetic() {
                 let current_variable = self.parser.next()?;
                 // Non-fatal, accumulate error, no extra behaviour is necessary
                 if !self.variables.insert(current_variable) {
@@ -43,7 +64,11 @@ impl ParserTRS {
             } else {
                 break;
             }
-            let after_var = self.parser.peek()?;
+            let after_var: char;
+            match self.parser.peek(){
+                Ok(received) => after_var = received,
+                Err(_) => return Err(self.parser.format_eof_error("',' или конец строки".to_string())),
+            }
             if after_var == ',' {
                 self.parser.next()?;
             } else {
@@ -51,9 +76,8 @@ impl ParserTRS {
             }
         }
         self.parser.read_eol()?;
-        // TODO(Переписать ошибку на русский)
         if self.variables.is_empty() {
-            return Err("variables not found".to_string());
+            return Err(format!("{}У функции не найдено ни одной переменной", self.parser.format_position()));
         }
         Ok(())
     }
@@ -95,7 +119,12 @@ impl ParserTRS {
     g = f
      */
     fn parse_term(&mut self) -> Result<Term, String> {
-        let c = self.parser.peek()?;
+        let c : char;
+        match self.parser.peek(){
+            Ok(received) => c = received,
+            Err(_) => return Err(self.parser.format_eof_error("терм".to_string()))
+        }
+
         if !c.is_alphabetic() {
             return Err(self.parser.format_error("буква".parse().unwrap()));
         }
@@ -147,7 +176,10 @@ impl ParserTRS {
 
         args.push(self.parse_term()?);
 
-        while self.parser.peek()? == ',' {
+        while match self.parser.peek() {
+            Ok(received) => received,
+            Err(_) => return Err(self.parser.format_eof_error("','".to_string())),
+        } == ',' {
             self.parser.next()?;
             args.push(self.parse_term()?);
         }
@@ -157,10 +189,22 @@ impl ParserTRS {
 }
 
 impl Parse for ParserTRS {
-    fn parse(&mut self) -> Result<(ParsedData), String> {
-        self.parse_variables()?;
+    fn parse(&mut self) -> Result<(ParsedData), Vec<String>> {
+        match self.parse_variables(){
+            Ok(_) => (),
+            Err(e) => {
+                self.parser.add_error(e);
+                return Err(self.parser.get_errors());
+            },
+        };
 
-        let rules = self.parse_rules()?;
+        let rules = match self.parse_rules(){
+            Ok(rules) => rules,
+            Err(e) => {
+                self.parser.add_error(e);
+                return Err(self.parser.get_errors());
+            },
+        };
 
         Ok((ParsedData::TRS(ParsedDataTRS {
             rules,

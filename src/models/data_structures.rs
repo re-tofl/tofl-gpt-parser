@@ -8,6 +8,7 @@ pub struct Parser {
     pos_in_line: u32,
     prev_line: u32,
     prev_pos_in_line: u32,
+    errors:  Vec<String>
 }
 
 #[derive(Debug)]
@@ -82,6 +83,7 @@ impl Parser {
             pos_in_line: 0,
             prev_pos_in_line: 0,
             prev_line: 0,
+            errors: Vec::new(),
         }
     }
 
@@ -144,7 +146,11 @@ impl Parser {
 
     pub fn read_exact_char(&mut self, expected: char) -> Result<(bool), String> {
         let start_pos = self.pos;
-        let current = self.peek()?;
+        let current: char;
+        match self.peek() {
+            Ok(c) => current = c,
+            Err(e) => return Err(self.format_eof_error(expected.to_string())),
+        }
         if current == expected {
             self.next()?;
             // Возвращаем true, если были считаны пробельные символы
@@ -184,13 +190,31 @@ impl Parser {
         }
     }
 
+    pub fn get_errors(&mut self) -> Vec<String>{
+        return self.errors.clone();
+    }
+
+    pub fn add_error(&mut self, message: String) {
+        self.errors.push(message);
+    }
+
+    pub fn format_position(&mut self) -> String {
+        format!("Ошибка в строке {}, на позиции {}. ",
+                self.line, self.pos_in_line)
+    }
+
     pub fn format_error(&mut self, expected: String) -> String {
         format!("Ошибка в строке {}, на позиции {}, ожидалось {}, считано '{}'",
                 self.line, self.pos_in_line, expected, self.input[self.pos as usize])
     }
 
+    pub fn format_eof_error(&mut self, expected: String) -> String {
+        format!("Ошибка в строке {}, на позиции {}, ожидалось: {}, считано EOF",
+                self.line, self.pos_in_line, expected)
+    }
+
     pub fn format_arity_error(&mut self,function: char, expected: String, received: String) -> String {
-        format!("Не совпадает арность функции {}, ожидаемое количество аргументов: {} , получили: {}",
+        format!("Не совпадает арность функции {}, ожидаемое количество аргументов: {} , считано: {}",
                 function ,expected, received)
     }
 
