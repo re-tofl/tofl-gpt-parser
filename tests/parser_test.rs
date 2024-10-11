@@ -11,6 +11,16 @@ mod tests {
     use tofl_gpt_parser::parsers::{Parse, ParserInterpret};
 
     #[test]
+    fn test_trs0() {
+        let input = "variables = x,y\nf(x,h(y))=h(f(x,"; //EOF error
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => {panic!("должна быть eof ошибка")}
+            Err(e) => {}
+        }
+    }
+
+    #[test]
     fn test_trs1() {
         let input = "variables = x,y\nf(x,h(y))=h(f(x,y))\ng = f";
         //let input = "variables = x\ng(x) = f(f)";

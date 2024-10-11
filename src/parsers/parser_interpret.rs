@@ -61,8 +61,10 @@ impl Parse for ParserInterpret {
 
 impl ParserInterpret {
     fn parse_function_or_const(&mut self) -> Result<ParsedInterpretFunction, String> {
-        let name = self.parser.peek()?;
-
+        let name= match self.parser.peek(){
+            Ok(received) => received,
+            Err(_) => return Err(self.parser.format_eof_error("функция или константа".to_string()))
+        };
         if self.model_from_trs.functions.contains_key(&name) {
             return self.parse_function()
         } else if self.model_from_trs.constants.contains(&name) {
@@ -73,7 +75,10 @@ impl ParserInterpret {
     }
 
     fn parse_function(&mut self) -> Result<ParsedInterpretFunction, String> {
-        let name = self.parser.next()?;
+        let name = match self.parser.next(){
+            Ok(received) => received,
+            Err(_) => return Err(self.parser.format_eof_error("функция".to_string()))
+        };
         if !self.model_from_trs.functions.contains_key(&name) {
             return Err(format!("Функция {} не объявлена в TRS", name));
         } // non fatal
@@ -101,7 +106,10 @@ impl ParserInterpret {
     }
 
     fn parse_constant(&mut self) -> Result<ParsedInterpretFunction, String> {
-        let name = self.parser.next()?;
+        let name = match self.parser.next(){
+            Ok(received) => received,
+            Err(_) => return Err(self.parser.format_eof_error("константа".to_string()))
+        };
         if !self.model_from_trs.constants.contains(&name) {
             return Err(format!("Константы {} нет в TRS, но она присутствует в интепретации", name));
         } //non fatal
@@ -145,7 +153,10 @@ impl ParserInterpret {
     }
 
     fn parse_variable(&mut self) -> Result<String, String> {
-        let name = self.parser.next()?;
+        let name = match self.parser.next(){
+            Ok(received) => received,
+            Err(_) => return Err(self.parser.format_eof_error("переменная".to_string()))
+        };
 
         if !name.is_alphabetic(){
             return Err(format!("Expected alphabetic name, got {}", name))
@@ -167,7 +178,10 @@ impl ParserInterpret {
             } //non fatal
             variables.insert(current);
             num_of_variables += 1;
-            let punctuation = self.parser.next()?;
+            let punctuation = match self.parser.next(){
+                Ok(received) => received,
+                Err(_) => return Err(self.parser.format_eof_error("')' или ','".to_string()))
+            };
 
             if punctuation == ')' {
                 return Ok((variables, num_of_variables));
@@ -203,7 +217,12 @@ impl ParserInterpret {
     fn parse_monomial(&mut self, variables: &HashSet<String>) -> Result<String, String> {
         let mut monomial_parts = Vec::new();
         let mut coefficient = String::new();
-        let mut symbol = self.parser.peek()?;
+        let mut symbol : char;
+        match self.parser.peek() {
+            Ok(c) => symbol = c,
+            Err(_) => return Err(self.parser.format_eof_error("что-то".to_string())),
+            //TODO что ожидалось?
+        }
 
         if symbol.is_ascii_digit() {
             coefficient = self.parse_number_string()?;
