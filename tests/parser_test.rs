@@ -74,6 +74,66 @@ mod tests {
     }
 
     #[test]
+    fn test_trs_deep_nesting_correct_1() {
+        let input = "variables = x\na(b(c(d(e(f(x)))))) = g(h(i(j(k(l(x))))))\n";
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => {
+            }
+            Err(e) => {
+                panic!("{:?}", e)
+            }
+        }
+    }
+
+    #[test]
+    fn test_trs_deep_nesting_correct_2() {
+        let input = "variables = x\na(b(a(b(a(b(a(b(x)))))))) = a(x)\n";
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => {
+            }
+            Err(e) => {
+                panic!("{:?}", e)
+            }
+        }
+    }
+
+    #[test]
+    fn test_trs_deep_nesting_correct_3() {
+        let input = "variables = x,y,z\nf(g(h(i(j(x)))),k(l(m(n(y)))),o(p(q(r(s(z)))))) = t(u(v(w(x))))\n";
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => { }
+            Err(e) => {
+                panic!("{:?}", e)
+            }
+        }
+    }
+
+    #[test]
+    fn test_trs_deep_nesting_error_1() {
+        // Несоответствует арность
+        let input = "variables = x\nf(g(h(i(j(k(l(m(n(o(p(x))))))))))) = q(x)\nf(a,b) = c\n";
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_trs_deep_nesting_error_2() {
+        let input = "variables = x\na(b(c(d(e(f(g(h(i(j(k(x)))))))))) = x\n";
+        // Здесь отсутствует закрывающая скобка для функции 'a'
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => { println!("{:?}", e) }
+        }
+    }
+
+    #[test]
     fn test_interpret_function_constant_not_declared() { //Функция была объявлена в TRS, но её нет в интерпретации
         let input1 = "F(m,n) = m+n\n";
         let mut functions = HashMap::new();

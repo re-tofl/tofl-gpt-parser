@@ -96,8 +96,7 @@ impl ParserTRS {
         }
 
         if rules.is_empty() {
-            // TODO(Переписать ошибку на русский)
-            return Err("rules not found".to_string());
+            return Err("Правила переписывания не обнаружены".to_string());
         }
         Ok((rules))
     }
