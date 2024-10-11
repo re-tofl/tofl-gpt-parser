@@ -203,6 +203,11 @@ impl Parser {
                 self.line, self.pos_in_line)
     }
 
+    pub fn format_previous_position(&mut self) -> String {
+        format!("Ошибка в строке {}, на позиции {}. ",
+                self.prev_line, self.prev_pos_in_line)
+    }
+
     pub fn format_error(&mut self, expected: String) -> String {
         format!("Ошибка в строке {}, на позиции {}, ожидалось {}, считано '{}'",
                 self.line, self.pos_in_line, expected, self.input[self.pos as usize])

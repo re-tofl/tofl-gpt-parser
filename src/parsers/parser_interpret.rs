@@ -299,14 +299,14 @@ impl ParserInterpret {
             match self.parse_variable() {
                 Ok(name) => variable = name,
                 Err(e) => if coefficient == "" {
-                    return Err(format!("{}Ожидался коэффицент, имя переменной, '+' или перевод строки", self.parser.format_position()))
+                    return Err(format!("{}Ожидался коэффицент, имя переменной, '+' или перевод строки", self.parser.format_previous_position()))
                 } else {
                     return Err(e)
                 }
             }
 
             if !variables.contains(&variable) {
-                return Err(format!("{}Переменная {} не указана в качестве аргумента функции", self.parser.format_position(), variable));
+                return Err(format!("{}Переменная {} не указана в качестве аргумента функции", self.parser.format_previous_position(), variable));
             }
 
             match self.parser.peek() {
