@@ -75,5 +75,4 @@ pub fn handle_request(request: &rouille::Request) -> rouille::Response {
     }
     let resp = rouille::Response::json(&res);
     resp
-    //rouille::Response::text(format!("field1's value is {}", json.Interpretation))
 }
