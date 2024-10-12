@@ -486,6 +486,46 @@ mod tests {
     }
 
     #[test]
+    fn test_interpret8() {
+        let input = "f(x, y)=2*xyx";
+        let mut variables = HashSet::new();
+        variables.insert('x');
+        let mut functions = HashMap::new();
+        functions.insert('f', 2);
+
+        let mut parser = parsers::ParserInterpret::new(input, Model{
+            variables,
+            constants: Default::default(),
+            functions,
+        });
+
+        match parser.parse() {
+            Ok(res) => {println!("{:?}", res)}
+            Err(e) => { panic!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret9() {
+        let input = "f(x, y)=2*xyx+4+2+x{3}xy4*xy3*x";
+        let mut variables = HashSet::new();
+        variables.insert('x');
+        let mut functions = HashMap::new();
+        functions.insert('f', 2);
+
+        let mut parser = parsers::ParserInterpret::new(input, Model{
+            variables,
+            constants: Default::default(),
+            functions,
+        });
+
+        match parser.parse() {
+            Ok(res) => {println!("{:?}", res)}
+            Err(e) => { panic!("{:?}", e) }
+        }
+    }
+
+    #[test]
     fn test_parse_eol() {
         let input = "variables = x,y\nf(x,h(y))=h(f(x,y))\n\ng = f";
         let mut parser_trs = parsers::ParserTRS::new(input);
