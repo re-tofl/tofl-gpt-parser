@@ -59,7 +59,7 @@ impl ParserTRS {
                 let current_variable = self.parser.next()?;
                 // Non-fatal, accumulate error, no extra behaviour is necessary
                 if !self.variables.insert(current_variable) {
-                    return Err(format!("Переменная {} объявлена несколько раз", current_variable));
+                    self.parser.add_error(format!("Переменная {} объявлена несколько раз", current_variable));
                 }
             } else {
                 break;
