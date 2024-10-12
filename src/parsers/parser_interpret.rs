@@ -310,7 +310,10 @@ impl ParserInterpret {
             }
 
             match self.parser.peek() {
-                Err(_) => return Ok(build_monomial(&coefficient, &variable, &degree)),
+                Err(_) => {
+                    monomial_parts.push(build_monomial(&coefficient, &variable, &degree));
+                    return Ok(monomial_parts.join(" * "));
+                },
                 Ok(symbol) => {
                     if symbol == '{' {
                         degree = self.parse_degree()?;
