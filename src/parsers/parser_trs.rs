@@ -142,7 +142,7 @@ impl ParserTRS {
                 if !self.variables.contains(&c) {
                     self.constants.insert(c);
                 }
-                return Ok(term),
+                return Ok(term)
             }
         };
 
