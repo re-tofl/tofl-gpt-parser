@@ -526,6 +526,69 @@ mod tests {
     }
 
     #[test]
+    fn test_interpret10() {
+        let input = "f(x, y)=xy\nk=5";
+        let mut variables = HashSet::new();
+        variables.insert('x');
+        let mut functions = HashMap::new();
+        functions.insert('f', 2);
+        let mut constants = HashSet::new();
+        constants.insert('k');
+
+        let mut parser = parsers::ParserInterpret::new(input, Model{
+            variables,
+            constants,
+            functions,
+        });
+
+        match parser.parse() {
+            Ok(res) => {println!("{:?}", res)}
+            Err(e) => { panic!("{:?}", e) }
+        }
+    }
+
+    #[test]
+    fn test_interpret11() {
+        let input = "f(x, y)=xy\n f(x,y)=4\nk=1\nk=2";
+        let mut variables = HashSet::new();
+        variables.insert('x');
+        let mut functions = HashMap::new();
+        functions.insert('f', 2);
+        let mut constants = HashSet::new();
+        constants.insert('k');
+
+        let mut parser = parsers::ParserInterpret::new(input, Model{
+            variables,
+            constants,
+            functions,
+        });
+
+        match parser.parse() {
+            Ok(res) => {panic!("должна быть ошибка")}
+            Err(e) => {  println!("{:?}", e)}
+        }
+    }
+
+    #[test]
+    fn test_parsers_interaction() {
+        let input = "variables = x,y\nf(x,y) = k";
+        let input1 = "f(x, y)=xy\nk=5";
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        parser_trs.parse().unwrap();
+        let model = Model {
+            variables: parser_trs.variables,
+            constants: parser_trs.constants,
+            functions: parser_trs.functions,
+        };
+        let mut parser_interpret = ParserInterpret::new(input1, model);
+        let res = parser_interpret.parse();
+        match res {
+            Ok(res) => {}
+            Err(e) => { panic!("{:?}", e) }
+        }
+    }
+
+    #[test]
     fn test_parse_eol() {
         let input = "variables = x,y\nf(x,h(y))=h(f(x,y))\n\ng = f";
         let mut parser_trs = parsers::ParserTRS::new(input);
