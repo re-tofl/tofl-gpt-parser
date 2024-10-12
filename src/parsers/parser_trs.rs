@@ -135,7 +135,15 @@ impl ParserTRS {
 
         let symbol = match self.parser.peek() {
             Ok(val) => { val }
-            Err(_) => return Ok(term),
+            Err(_) => {
+                if self.functions.contains_key(&c) {
+                    return Err(self.parser.format_type_error(Types::ConstantOrVariable, Types::FUNCTION));
+                }
+                if !self.variables.contains(&c) {
+                    self.constants.insert(c);
+                }
+                return Ok(term)
+            }
         };
 
         if symbol == '(' {

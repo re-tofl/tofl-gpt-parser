@@ -125,7 +125,12 @@ impl ParserInterpret {
 
         let expression = self.parse_polynomial_expression(&variables)?;
 
-        self.own_functions.insert(name, num_of_variables);
+        if self.own_functions.contains_key(&name) {
+            self.parser.add_error(format!("{}Интерпретация функции {} уже была определена",
+                                          pos, name));
+        } else {
+            self.own_functions.insert(name, num_of_variables);
+        }
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
@@ -153,7 +158,12 @@ impl ParserInterpret {
 
         let number = self.parse_number_string()?;
 
-        self.own_constants.insert(name);
+        if self.own_constants.contains(&name) {
+            self.parser.add_error(format!("{}Интерпретация константы {} уже была определена",
+                                          pos, name));
+        } else {
+            self.own_constants.insert(name);
+        }
 
         Ok(ParsedInterpretFunction{
             name: name.to_string(),
