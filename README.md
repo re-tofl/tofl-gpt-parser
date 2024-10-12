@@ -11,9 +11,10 @@
    run --package tofl-gpt-parser --bin tofl-gpt-parser
    ```
 
-2. **С помощью Docker**: Если установлен **Docker**, используйте следующую команду:
+2. **С помощью Docker**: Если установлен **Docker**, используйте следующие команды:
 
    ```bash
+   docker build -t parser .
    docker run -dp 127.0.0.1:8090:8090 parser
    ```
 

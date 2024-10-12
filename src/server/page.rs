@@ -51,7 +51,7 @@ pub fn handle_page(request: &rouille::Request) -> rouille::Response {
             .then(result => {
                 const resultDiv = document.getElementById('result');
                 resultDiv.innerHTML = `
-                    <strong>Результат:</strong> <pre>${JSON.stringify(result, null, 2)}</pre> <br>
+                    <h2>Результат:</h2> <pre>${JSON.stringify(result, null, 2)}</pre> <br>
                 `;
             })
             .catch(error => {
