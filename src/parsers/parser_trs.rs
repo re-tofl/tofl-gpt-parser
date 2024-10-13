@@ -9,6 +9,13 @@ pub struct ParserTRS {
     pub variables: HashSet<char>,
     pub constants: HashSet<char>,
     pub functions: HashMap<char, i32>,
+    pub left_variables: HashSet<char>,
+    pub right_variables: HashSet<char>,
+}
+
+#[derive(Copy, Clone)]
+enum RuleType {
+    LEFT, RIGHT
 }
 
 impl ParserTRS {
@@ -18,6 +25,8 @@ impl ParserTRS {
             variables: HashSet::new(),
             constants: HashSet::new(),
             functions: HashMap::new(),
+            left_variables: HashSet::new(),
+            right_variables: HashSet::new(),
         }
     }
 
@@ -102,22 +111,26 @@ impl ParserTRS {
     }
 
     fn parse_rule(&mut self) -> Result<Rule, String> {
-        let lhs = self.parse_term()?;
+        let lhs = self.parse_term(RuleType::LEFT)?;
 
         self.parser.read_exact_char('=')?;
 
-        let rhs = self.parse_term()?;
+        let rhs = self.parse_term(RuleType::RIGHT)?;
 
+
+        let dif = self.right_variables
+            .difference(&self.left_variables)
+            .cloned()
+            .collect::<HashSet<char>>();
+        let res = match dif.is_empty() {
+            true => Ok(Rule { left: lhs, right: rhs }),
+            false => return Err(self.parser.format_variables_count_error(dif))
+        };
         self.parser.read_eol()?;
-
-        Ok(Rule { left: lhs, right: rhs })
+        res
     }
-    /*
-    variables = x,y
-    f(x,h(y))=h(f(x,y))
-    g = f
-     */
-    fn parse_term(&mut self) -> Result<Term, String> {
+
+    fn parse_term(&mut self, rule_type: RuleType) -> Result<Term, String> {
         let c : char;
         match self.parser.peek(){
             Ok(received) => c = received,
@@ -139,9 +152,7 @@ impl ParserTRS {
                 if self.functions.contains_key(&c) {
                     return Err(self.parser.format_type_error(Types::ConstantOrVariable, Types::FUNCTION));
                 }
-                if !self.variables.contains(&c) {
-                    self.constants.insert(c);
-                }
+                self.check_variable_or_const(c, rule_type);
                 return Ok(term)
             }
         };
@@ -157,7 +168,7 @@ impl ParserTRS {
             if !self.functions.contains_key(&c) {
                 self.functions.insert(c, -1);
             }
-            let args = self.parse_arg_list()?;
+            let args = self.parse_arg_list(rule_type)?;
 
             if *self.functions.get(&c).unwrap() == -1 {
                 self.functions.insert(c, args.len() as i32);
@@ -170,25 +181,32 @@ impl ParserTRS {
             if self.functions.contains_key(&c) {
                 return Err(self.parser.format_type_error(Types::ConstantOrVariable, Types::FUNCTION));
             }
-            if !self.variables.contains(&c) {
-                self.constants.insert(c);
-            }
+            self.check_variable_or_const(c, rule_type)
         }
 
         Ok(term)
     }
 
-    fn parse_arg_list(&mut self) -> Result<Vec<Term>, String> {
+    fn check_variable_or_const(&mut self, c: char, rule_type: RuleType) {
+        if !self.variables.contains(&c) {
+            self.constants.insert(c);
+        } else {
+            match rule_type {
+                RuleType::LEFT => self.left_variables.insert(c),
+                RuleType::RIGHT => self.right_variables.insert(c),
+            };
+        }
+    }
+    fn parse_arg_list(&mut self, rule_type: RuleType) -> Result<Vec<Term>, String> {
         let mut args: Vec<Term> = Vec::new();
-
-        args.push(self.parse_term()?);
+        args.push(self.parse_term(rule_type)?);
 
         while match self.parser.peek() {
             Ok(received) => received,
             Err(_) => return Err(self.parser.format_eof_error("','".to_string())),
         } == ',' {
             self.parser.next()?;
-            args.push(self.parse_term()?);
+            args.push(self.parse_term(rule_type)?);
         }
 
         Ok(args)
