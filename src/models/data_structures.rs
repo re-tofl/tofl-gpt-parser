@@ -8,7 +8,7 @@ pub struct Parser {
     pos_in_line: u32,
     prev_line: u32,
     prev_pos_in_line: u32,
-    errors:  Vec<String>
+    errors: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -58,8 +58,10 @@ pub struct Term {
 }
 
 pub enum Types {
-    CONSTANT, VARIABLE, FUNCTION,
-    ConstantOrVariable
+    CONSTANT,
+    VARIABLE,
+    FUNCTION,
+    ConstantOrVariable,
 }
 
 impl Types {
@@ -74,7 +76,6 @@ impl Types {
 }
 
 impl Parser {
-
     pub fn new(input: &str) -> Self {
         Parser {
             input: input.chars().collect(),
@@ -168,7 +169,7 @@ impl Parser {
                     '\n' => {
                         self.read_exact_char('\n')?;
                         Ok(())
-                    },
+                    }
                     '\r' => {
                         self.read_exact_char('\r')?;
                         match self.peek() {
@@ -176,13 +177,13 @@ impl Parser {
                             Ok(symbol) => {
                                 if symbol == '\n' {
                                     self.read_exact_char('\n')?;
-                                    return Ok(())
+                                    return Ok(());
                                 };
 
                                 Ok({})
                             }
                         }
-                    },
+                    }
                     _ => Err(self.format_error("eol".parse().unwrap())),
                 }
             }
@@ -190,7 +191,7 @@ impl Parser {
         }
     }
 
-    pub fn get_errors(&mut self) -> Vec<String>{
+    pub fn get_errors(&mut self) -> Vec<String> {
         return self.errors.clone();
     }
 
@@ -218,13 +219,22 @@ impl Parser {
                 self.line, self.pos_in_line, expected)
     }
 
-    pub fn format_arity_error(&mut self,function: char, expected: String, received: String) -> String {
+    pub fn format_arity_error(&mut self, function: char, expected: String, received: String) -> String {
         format!("Не совпадает арность функции {}, ожидаемое количество аргументов: {} , считано: {}",
-                function ,expected, received)
+                function, expected, received)
     }
 
     pub fn format_type_error(&mut self, expected: Types, received: Types) -> String {
         format!("Ошибка в строке {}, на позиции {}, ожидалась {}, считана {}",
-        self.prev_line, self.prev_pos_in_line, expected.as_text(), received.as_text())
+                self.prev_line, self.prev_pos_in_line, expected.as_text(), received.as_text())
+    }
+
+    pub fn format_variables_count_error(&mut self, wrong_variables: HashSet<char>) -> String {
+        let wrong_variables_as_string: String = wrong_variables
+            .iter()
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>()
+            .join(" ");
+        format!("Ошибка в строке {}, следующие переменные входят в правую часть, но не входят в левую: {}", self.line, wrong_variables_as_string)
     }
 }

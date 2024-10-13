@@ -1,14 +1,11 @@
-use std::collections::{HashMap, HashSet};
-
 #[cfg(test)]
 mod tests {
     use std::collections::{HashMap, HashSet};
     use std::fmt::Debug;
-    use tofl_gpt_parser::{models, server};
     use tofl_gpt_parser::models::data_structures::Model;
-    use tofl_gpt_parser::models::ParsedData;
     use tofl_gpt_parser::parsers;
     use tofl_gpt_parser::parsers::{Parse, ParserInterpret};
+    use tofl_gpt_parser::server;
 
     #[test]
     fn test_trs0() {
@@ -324,8 +321,8 @@ mod tests {
 
     #[test]
     fn test_interpret1() {
-        let input = "variables = m,n,o\nF(m,n) = G(o)";
-        let input1 = "F(m,n) = m+n\nG(o) = 2*o\n";
+        let input = "variables = m,n,o\nF(m,n) = G(n)";
+        let input1 = "F(m,n) = m+n\nG(n) = 2*n\n";
         let mut parser_trs = parsers::ParserTRS::new(input);
         parser_trs.parse().unwrap();
         let model = Model {
@@ -601,10 +598,30 @@ mod tests {
     #[test]
     fn test_complete() {
         let headers: Vec<(String, String)> = vec![("Content-Type".to_string(), "application/json".to_string())];
-        let string = "{\r\n   \"TRS\":\"variables = m,n,o\\nF(m,n) = G(o)\",\r\n   \"Interpretation\":\"F(m,n) = m+n\\nG(o) = 2*o\"\r\n}";
+        let string = "{\r\n   \"TRS\":\"variables = m,n,o\\nF(m,n) = G(n)\",\r\n   \"Interpretation\":\"F(m,n) = m+n\\nG(n) = 2*n\"\r\n}";
 
         let req = rouille::Request::fake_http("GET", "", headers, Vec::from(string));
         let resp = server::handlers::handle_request(&req);
         assert_eq!(resp.status_code, 200);
+    }
+
+    #[test]
+    fn test_left_rule_missing_variable_existing_in_right_rule() {
+        let input = "variables = x,y\nf(y) = f(x)";
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => { panic!("должна вернуться ошибка") }
+            Err(e) => { assert_eq!(e[0], "Ошибка в строке 2, следующие переменные входят в правую часть, но не входят в левую: x") }
+        }
+    }
+
+    #[test]
+    fn test_left_rule_existing_variable_existing_in_right_rule() {
+        let input = "variables = x,y\nf(x,y) = g(x)";
+        let mut parser_trs = parsers::ParserTRS::new(input);
+        match parser_trs.parse() {
+            Ok(res) => { }
+            Err(e) => { panic!("{:?}", e) }
+        }
     }
 }
