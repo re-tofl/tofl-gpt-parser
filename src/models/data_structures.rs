@@ -234,7 +234,7 @@ impl Parser {
             .iter()
             .map(|c| c.to_string())
             .collect::<Vec<String>>()
-            .join(" ");
+            .join(", ");
         format!("Ошибка в строке {}, следующие переменные входят в правую часть, но не входят в левую: {}", self.line, wrong_variables_as_string)
     }
 }
